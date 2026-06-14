@@ -1,1100 +1,1220 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>رحلة داخل الحاسوب — VR | الوكالة الوطنية للأمن السيبراني</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>غرفة الأمن السيبراني — 7 إلى 9 سنوات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════
-   TOKENS
-══════════════════════════════════════════ */
-:root{
-  --c-bg:       #020812;
-  --c-surface:  #071020;
-  --c-panel:    rgba(7,16,32,.88);
-  --c-border:   rgba(56,182,255,.18);
-  --c-blue:     #38B6FF;
-  --c-teal:     #00E5A0;
-  --c-gold:     #C9A84C;
-  --c-red:      #FF4D4D;
-  --c-purple:   #A78BFA;
-  --c-warn:     #FFD166;
-  --c-text:     #E8F0FF;
-  --c-muted:    rgba(232,240,255,.45);
-  --r:          12px;
-  --r-lg:       18px;
-  --ff:         'Tajawal', system-ui, sans-serif;
-}
+  :root {
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --teal-dark: #085041;
+    --gold: #EF9F27;
+    --gold-light: #FAEEDA;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --navy: #0a1628;
+    --navy2: #0f2040;
+    --navy3: #162d54;
+    --card-bg: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.12);
+    --text: #f0f4ff;
+    --text-muted: rgba(240,244,255,0.6);
+  }
 
-/* ══════════════════════════════════════════
-   RESET
-══════════════════════════════════════════ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--c-bg);font-family:var(--ff);color:var(--c-text)}
+  * { margin:0; padding:0; box-sizing:border-box; }
 
-/* ══════════════════════════════════════════
-   CANVAS
-══════════════════════════════════════════ */
-#vr-canvas{position:fixed;inset:0;display:block;width:100%;height:100%}
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    direction: rtl;
+  }
 
-/* ══════════════════════════════════════════
-   INTRO OVERLAY
-══════════════════════════════════════════ */
-#intro{
-  position:fixed;inset:0;z-index:200;
-  background:var(--c-bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:32px;
-  transition:opacity .8s ease;
-}
-#intro.fade{opacity:0;pointer-events:none}
-.intro-logo{width:80px;height:80px;margin-bottom:24px}
-.intro-badge{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(56,182,255,.1);border:1px solid rgba(56,182,255,.25);
-  border-radius:20px;padding:6px 18px;font-size:13px;color:var(--c-blue);
-  margin-bottom:20px;
-}
-#intro h1{font-size:clamp(28px,6vw,52px);font-weight:900;line-height:1.15;margin-bottom:12px}
-#intro h1 span{color:var(--c-blue)}
-#intro p{font-size:15px;color:var(--c-muted);max-width:520px;line-height:1.8;margin-bottom:36px}
-.intro-specs{
-  display:flex;gap:24px;flex-wrap:wrap;justify-content:center;
-  margin-bottom:36px;
-}
-.spec-pill{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  border-radius:20px;padding:8px 18px;font-size:13px;color:var(--c-muted);
-  display:flex;align-items:center;gap:8px;
-}
-.spec-pill span{color:var(--c-text);font-weight:600}
-.start-btn{
-  background:var(--c-blue);color:#020812;
-  border:none;border-radius:var(--r);
-  padding:16px 48px;font-family:var(--ff);font-size:17px;font-weight:700;
-  cursor:pointer;transition:all .2s;letter-spacing:.02em;
-}
-.start-btn:hover{background:#5CC8FF;transform:translateY(-2px);box-shadow:0 8px 32px rgba(56,182,255,.3)}
-.intro-warning{
-  margin-top:20px;font-size:12px;color:var(--c-muted);
-  display:flex;align-items:center;gap:6px;
-}
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 20%, rgba(29,158,117,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 80%, rgba(239,159,39,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(29,158,117,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* ══════════════════════════════════════════
-   HUD — top bar
-══════════════════════════════════════════ */
-#hud{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  height:60px;
-  background:linear-gradient(to bottom,rgba(2,8,18,.95),transparent);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 24px;
-  opacity:0;transition:opacity .5s;pointer-events:none;
-}
-#hud.show{opacity:1;pointer-events:auto}
-.hud-logo{display:flex;align-items:center;gap:10px}
-.hud-logo svg{width:36px;height:36px}
-.hud-logo-text{font-size:12px;color:var(--c-gold);font-weight:700;line-height:1.2}
-.hud-logo-sub{font-size:10px;color:var(--c-muted)}
-.hud-stage{display:flex;align-items:center;gap:10px}
-.stage-dots{display:flex;gap:6px}
-.sdot{
-  width:8px;height:8px;border-radius:50%;
-  background:rgba(255,255,255,.15);
-  transition:all .4s;
-}
-.sdot.done{background:var(--c-teal)}
-.sdot.active{background:var(--c-blue);box-shadow:0 0 8px var(--c-blue);width:22px;border-radius:4px}
-.hud-score{
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-  border-radius:20px;padding:5px 16px;font-size:13px;
-  display:flex;align-items:center;gap:8px;
-}
-.hud-score-val{font-weight:700;color:var(--c-warn);font-size:16px}
+  /* Floating particles */
+  .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--teal);
+    opacity: 0.15;
+    animation: float linear infinite;
+  }
 
-/* ══════════════════════════════════════════
-   CROSSHAIR
-══════════════════════════════════════════ */
-#crosshair{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  width:20px;height:20px;pointer-events:none;z-index:90;
-  opacity:0;transition:opacity .5s;
-}
-#crosshair.show{opacity:.6}
-#crosshair::before,#crosshair::after{
-  content:'';position:absolute;background:rgba(56,182,255,.8);
-}
-#crosshair::before{width:1px;height:100%;left:50%;top:0}
-#crosshair::after{width:100%;height:1px;top:50%;left:0}
-#crosshair-ring{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  width:40px;height:40px;
-  border-radius:50%;
-  border:1.5px solid rgba(56,182,255,.3);
-  pointer-events:none;z-index:89;
-  opacity:0;transition:opacity .5s;
-}
-#crosshair-ring.show{opacity:1}
-#gaze-progress{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%) rotate(-90deg);
-  width:44px;height:44px;
-  pointer-events:none;z-index:88;
-}
-#gaze-circle{
-  fill:none;stroke:var(--c-blue);
-  stroke-width:2.5;stroke-dasharray:132;stroke-dashoffset:132;
-  stroke-linecap:round;
-  transition:stroke-dashoffset .05s linear;
-}
+  @keyframes float {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.15; }
+    90% { opacity: 0.15; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
 
-/* ══════════════════════════════════════════
-   SCENE PANEL (bottom)
-══════════════════════════════════════════ */
-#scene-panel{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
-  background:var(--c-panel);
-  backdrop-filter:blur(20px);
-  border-top:1px solid var(--c-border);
-  padding:20px 28px 24px;
-  transform:translateY(100%);
-  transition:transform .5s cubic-bezier(.4,0,.2,1);
-}
-#scene-panel.show{transform:translateY(0)}
-.panel-stage-label{font-size:11px;color:var(--c-blue);letter-spacing:.08em;margin-bottom:6px}
-.panel-headline{font-size:20px;font-weight:700;line-height:1.35;margin-bottom:16px}
-.panel-headline em{color:var(--c-blue);font-style:normal}
-.panel-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
-.choice-card{
-  background:rgba(255,255,255,.05);
-  border:1.5px solid rgba(255,255,255,.1);
-  border-radius:var(--r);padding:13px 16px;
-  display:flex;align-items:flex-start;gap:10px;
-  cursor:pointer;transition:all .18s;
-  font-family:var(--ff);font-size:13px;color:var(--c-text);
-  text-align:right;
-}
-.choice-card:hover{background:rgba(56,182,255,.1);border-color:var(--c-blue);transform:translateY(-1px)}
-.choice-card.correct{background:rgba(0,229,160,.12);border-color:var(--c-teal);color:var(--c-teal)}
-.choice-card.wrong  {background:rgba(255,77,77,.1); border-color:var(--c-red); color:#FF8080}
-.choice-card.locked {pointer-events:none;opacity:.4}
-.choice-emoji{font-size:20px;flex-shrink:0;margin-top:1px}
+  /* ===== SCREENS ===== */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 20px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    overflow-y: auto;
+  }
 
-/* ══════════════════════════════════════════
-   FEEDBACK
-══════════════════════════════════════════ */
-#feedback{
-  border-radius:var(--r);padding:12px 16px;
-  font-size:13px;line-height:1.7;
-  display:none;margin-bottom:12px;
-}
-#feedback.show.ok {display:block;background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);color:var(--c-teal)}
-#feedback.show.err{display:block;background:rgba(255,77,77,.09);border:1px solid rgba(255,77,77,.22);color:#FF8080}
-.panel-footer{display:flex;align-items:center;justify-content:space-between}
-.score-pill{
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-  border-radius:20px;padding:6px 16px;font-size:13px;color:var(--c-muted);
-  display:flex;align-items:center;gap:6px;
-}
-.score-num{font-weight:700;color:var(--c-warn);font-size:18px}
-.next-btn{
-  background:var(--c-blue);color:#020812;border:none;
-  border-radius:var(--r);padding:11px 28px;
-  font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;
-  transition:all .18s;
-}
-.next-btn:hover:not(:disabled){background:#5CC8FF;transform:translateY(-1px)}
-.next-btn:disabled{opacity:.25;cursor:default;transform:none}
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.97);
+  }
 
-/* ══════════════════════════════════════════
-   HOTSPOT LABEL (3D projected)
-══════════════════════════════════════════ */
-.hotspot-label{
-  position:fixed;
-  background:var(--c-panel);
-  border:1px solid var(--c-border);
-  border-radius:var(--r);
-  padding:8px 14px;
-  font-size:12px;color:var(--c-blue);
-  pointer-events:none;
-  white-space:nowrap;
-  transform:translate(-50%,-120%);
-  opacity:0;transition:opacity .2s;
-}
-.hotspot-label.show{opacity:1}
+  /* ===== WELCOME SCREEN ===== */
+  #screen-welcome {
+    text-align: center;
+    gap: 24px;
+  }
 
-/* ══════════════════════════════════════════
-   RESULT
-══════════════════════════════════════════ */
-#result{
-  position:fixed;inset:0;z-index:200;
-  background:rgba(2,8,18,.96);
-  display:none;
-  align-items:center;justify-content:center;
-  flex-direction:column;text-align:center;padding:32px;
-}
-#result.show{display:flex}
-.result-medal{font-size:72px;margin-bottom:14px}
-.result-title{font-size:28px;font-weight:900;margin-bottom:6px}
-.result-sub{font-size:15px;color:var(--c-muted);margin-bottom:28px}
-.result-ring-wrap{margin-bottom:28px}
-.result-ring{width:140px;height:140px}
-.result-bars{width:100%;max-width:420px;display:grid;gap:10px;margin-bottom:28px;text-align:right}
-.rbar-row{display:flex;align-items:center;gap:12px;direction:rtl}
-.rbar-label{font-size:13px;color:var(--c-muted);width:140px;flex-shrink:0}
-.rbar-track{flex:1;height:7px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
-.rbar-fill{height:100%;border-radius:4px;transition:width 1.4s cubic-bezier(.4,0,.2,1)}
-.result-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.r-btn{
-  border-radius:var(--r);padding:12px 28px;
-  font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;
-}
-.r-btn.primary{background:var(--c-blue);color:#020812;border:none}
-.r-btn.primary:hover{background:#5CC8FF}
-.r-btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--c-text)}
-.r-btn.ghost:hover{background:rgba(255,255,255,.07)}
+  .mascot {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--teal), #0f6e56);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(29,158,117,0.4);
+    animation: pulse 2s ease-in-out infinite;
+    border: 3px solid rgba(29,158,117,0.5);
+  }
 
-/* ══════════════════════════════════════════
-   LOOK HINT
-══════════════════════════════════════════ */
-#look-hint{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  text-align:center;color:var(--c-muted);
-  font-size:15px;z-index:95;
-  opacity:0;transition:opacity .6s;
-  pointer-events:none;
-}
-#look-hint.show{opacity:1}
-#look-hint span{display:block;font-size:32px;margin-bottom:8px;animation:spin360 4s linear infinite}
-@keyframes spin360{to{transform:rotateY(360deg)}}
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(29,158,117,0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 70px rgba(29,158,117,0.7); transform: scale(1.04); }
+  }
 
-/* ══════════════════════════════════════════
-   ENVIRONMENT LABEL
-══════════════════════════════════════════ */
-#env-label{
-  position:fixed;top:70px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.5);border:1px solid rgba(56,182,255,.2);
-  border-radius:20px;padding:5px 18px;font-size:12px;color:var(--c-blue);
-  opacity:0;transition:opacity .5s;pointer-events:none;z-index:99;
-}
-#env-label.show{opacity:1}
+  .welcome-title {
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.2;
+  }
 
-/* ══════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════ */
-@media(max-width:600px){
-  .panel-choices{grid-template-columns:1fr}
-  .panel-headline{font-size:16px}
-  #scene-panel{padding:16px 18px 20px}
-  .start-btn{padding:14px 32px;font-size:15px}
-}
+  .welcome-title span { color: var(--teal); }
+
+  .welcome-sub {
+    font-size: clamp(15px, 3vw, 20px);
+    color: var(--text-muted);
+    max-width: 500px;
+    line-height: 1.7;
+  }
+
+  .name-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .name-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .name-input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 16px;
+    padding: 14px 20px;
+    font-size: 18px;
+    font-family: 'Tajawal', sans-serif;
+    color: var(--text);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s;
+    direction: rtl;
+  }
+
+  .name-input:focus { border-color: var(--teal); }
+  .name-input::placeholder { color: var(--text-muted); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--teal), #0f6e56);
+    border: none;
+    border-radius: 50px;
+    padding: 16px 48px;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 30px rgba(29,158,117,0.35);
+  }
+
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(29,158,117,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 50px;
+    padding: 14px 40px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Tajawal', sans-serif;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
+
+  /* ===== QUIZ SCREEN ===== */
+  #screen-quiz {
+    gap: 28px;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .quiz-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: var(--card-bg);
+    border-radius: 99px;
+    overflow: hidden;
+    border: 0.5px solid var(--card-border);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal), #5DCAA5);
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  .question-counter {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--teal);
+    white-space: nowrap;
+  }
+
+  .greeting-chip {
+    background: var(--card-bg);
+    border: 0.5px solid var(--card-border);
+    border-radius: 50px;
+    padding: 8px 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .question-card {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 28px 32px;
+    backdrop-filter: blur(10px);
+  }
+
+  .question-scene {
+    font-size: 64px;
+    text-align: center;
+    margin-bottom: 16px;
+    animation: sceneIn 0.4s ease;
+  }
+
+  @keyframes sceneIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .question-text {
+    font-size: clamp(16px, 3vw, 22px);
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .choices-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .choice-btn {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Tajawal', sans-serif;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--teal);
+    background: rgba(29,158,117,0.12);
+    transform: translateY(-3px);
+  }
+
+  .choice-icon { font-size: 40px; }
+
+  .choice-text {
+    font-size: clamp(13px, 2.5vw, 16px);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .choice-btn.correct {
+    border-color: var(--teal);
+    background: rgba(29,158,117,0.2);
+    animation: correctPop 0.4s ease;
+  }
+
+  .choice-btn.wrong {
+    border-color: var(--red);
+    background: rgba(226,75,74,0.15);
+    animation: shake 0.4s ease;
+  }
+
+  @keyframes correctPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* mascot feedback */
+  .mascot-feedback {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    animation: slideUp 0.35s ease;
+    min-height: 72px;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .mascot-small {
+    font-size: 36px;
+    flex-shrink: 0;
+    animation: mascotBounce 0.5s ease;
+  }
+
+  @keyframes mascotBounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .feedback-text {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  /* ===== RESULT SCREEN ===== */
+  #screen-result {
+    gap: 24px;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .result-trophy {
+    font-size: 80px;
+    animation: trophySpin 0.8s ease;
+  }
+
+  @keyframes trophySpin {
+    0% { transform: rotate(-20deg) scale(0.5); opacity: 0; }
+    60% { transform: rotate(10deg) scale(1.1); }
+    100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  .result-title {
+    font-size: clamp(24px, 5vw, 38px);
+    font-weight: 900;
+  }
+
+  .score-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .star {
+    font-size: 36px;
+    transition: transform 0.3s;
+    filter: grayscale(1);
+    opacity: 0.4;
+  }
+
+  .star.lit {
+    filter: none;
+    opacity: 1;
+    animation: starPop 0.4s ease forwards;
+  }
+
+  @keyframes starPop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  .result-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 24px 32px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+  }
+
+  .result-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), #BA7517);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 50px;
+    margin-bottom: 16px;
+  }
+
+  .qr-placeholder {
+    width: 100px;
+    height: 100px;
+    background: white;
+    border-radius: 12px;
+    margin: 12px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #333;
+    text-align: center;
+    padding: 8px;
+    line-height: 1.4;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ===== STORY SCREEN ===== */
+  #screen-story {
+    gap: 20px;
+    max-width: 720px;
+    width: 100%;
+  }
+
+  .story-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .story-title-chip {
+    background: linear-gradient(135deg, rgba(29,158,117,0.2), rgba(29,158,117,0.05));
+    border: 1px solid rgba(29,158,117,0.3);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--teal);
+  }
+
+  .story-step-counter {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .story-scene-card {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 28px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+
+  .story-visual {
+    background: linear-gradient(135deg, var(--navy2), var(--navy3));
+    padding: 32px;
+    text-align: center;
+    font-size: 80px;
+    position: relative;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .story-visual-label {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.4);
+    border-radius: 50px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .story-body { padding: 24px 28px; }
+
+  .character-name {
+    font-size: 13px;
+    color: var(--teal);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .story-text {
+    font-size: clamp(16px, 2.8vw, 20px);
+    font-weight: 600;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .story-question {
+    font-size: clamp(15px, 2.5vw, 18px);
+    color: var(--gold);
+    font-weight: 700;
+    margin-top: 8px;
+  }
+
+  .story-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .story-choice {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 18px;
+    padding: 16px 22px;
+    cursor: pointer;
+    font-family: 'Tajawal', sans-serif;
+    font-size: clamp(14px, 2.5vw, 17px);
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .story-choice:hover:not(:disabled) {
+    border-color: var(--teal);
+    background: rgba(29,158,117,0.1);
+    transform: translateX(-4px);
+  }
+
+  .choice-letter {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.25s;
+  }
+
+  .story-choice:hover .choice-letter {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: white;
+  }
+
+  .story-choice.correct-choice {
+    border-color: var(--teal);
+    background: rgba(29,158,117,0.15);
+  }
+
+  .story-choice.correct-choice .choice-letter {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: white;
+  }
+
+  .story-choice.wrong-choice {
+    border-color: var(--red);
+    background: rgba(226,75,74,0.1);
+    animation: shake 0.4s ease;
+  }
+
+  .story-feedback {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    animation: slideUp 0.35s ease;
+  }
+
+  .feedback-icon { font-size: 32px; flex-shrink: 0; }
+
+  .feedback-lesson {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+
+  .feedback-detail {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ===== STORY END SCREEN ===== */
+  #screen-story-end {
+    gap: 24px;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .lesson-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    text-align: right;
+  }
+
+  .lesson-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(29,158,117,0.25);
+    border-radius: 16px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideUp 0.4s ease both;
+  }
+
+  .lesson-icon { font-size: 26px; flex-shrink: 0; }
+  .lesson-text { font-size: 15px; font-weight: 600; line-height: 1.5; }
+
+  /* ===== UTILITIES ===== */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--card-border);
+  }
+
+  .text-muted { color: var(--text-muted); font-size: 14px; }
+
+  .shimmer {
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Confetti layer */
+  #confetti-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .choices-grid { grid-template-columns: 1fr; }
+    .story-visual { font-size: 60px; min-height: 120px; }
+    .btn-row { flex-direction: column; align-items: center; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ══════ INTRO ══════ -->
-<div id="intro">
-  <svg class="intro-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="100" cy="100" r="95" fill="#071020" stroke="rgba(56,182,255,0.2)" stroke-width="1.5"/>
-    <path d="M100 28C132 28,168 54,173 92C178 124,157 153,130 163C115 170,100 170,84 163C57 153,36 124,41 92C46 54,68 28,100 28Z" fill="none" stroke="#00B4D8" stroke-width="2.5" opacity=".85"/>
-    <path d="M100 44L140 68L140 117L100 141L60 117L60 68Z" fill="none" stroke="#C9A84C" stroke-width="2"/>
-    <circle cx="100" cy="96" r="20" fill="none" stroke="#38B6FF" stroke-width="2.2"/>
-    <path d="M84 91L95 102L122 75" stroke="#00E5A0" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-    <path d="M100 76L100 57M100 115L100 134M79 96L60 96M121 96L140 96" stroke="#38B6FF" stroke-width="1.5" opacity=".5"/>
-    <path d="M58 50Q37 93 54 137" stroke="#C9A84C" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-    <path d="M54 137L46 158L65 147" stroke="#C9A84C" stroke-width="2" fill="none"/>
-  </svg>
+<!-- Floating particles -->
+<div class="particles" id="particles"></div>
+<div id="confetti-layer"></div>
 
-  <div class="intro-badge">🥽 تجربة VR تفاعلية — مناسبة للكشك وشاشات اللمس</div>
+<!-- ============ SCREEN 1: WELCOME ============ -->
+<div class="screen" id="screen-welcome">
+  <div class="mascot">🤖</div>
+  <h1 class="welcome-title">أهلاً بك في<br><span>رحلة الأمان الرقمي!</span></h1>
+  <p class="welcome-sub">أنا مستكشف! ساعدني أعرف ماذا تعرف عن السلامة الرقمية قبل أن تبدأ مغامرتك 🚀</p>
 
-  <h1>رحلة<br><span>داخل الحاسوب</span></h1>
-  <p>انغمس في عالم الأمن السيبراني — شاهد كيف تعمل البرمجيات الخبيثة من الداخل، وتعلّم كيف تدافع عن نفسك في فضاء رقمي ثلاثي الأبعاد</p>
-
-  <div class="intro-specs">
-    <div class="spec-pill">🎯 <span>4 مراحل</span> تفاعلية</div>
-    <div class="spec-pill">🌐 بيئة <span>360° ثلاثية الأبعاد</span></div>
-    <div class="spec-pill">🏅 نظام <span>نقاط وشهادة</span></div>
-    <div class="spec-pill">👁️ توافق مع <span>نظارات VR</span></div>
+  <div class="name-section">
+    <span class="name-label">اكتب اسمك أولاً</span>
+    <input type="text" class="name-input" id="playerName" placeholder="اسمك هنا..." maxlength="20">
   </div>
 
-  <button class="start-btn" id="startBtn">ابدأ الرحلة 🚀</button>
-  <div class="intro-warning">⚠️ اضغط في أي مكان بعد البدء وحرّك الفأرة / إصبعك لاستكشاف البيئة</div>
+  <button class="btn-primary" onclick="startQuiz()">ابدأ الاختبار ▶</button>
+  <p class="text-muted">5 أسئلة بسيطة • لا توجد إجابات خاطئة تماماً!</p>
 </div>
 
-<!-- ══════ HUD ══════ -->
-<div id="hud">
-  <div class="hud-logo">
-    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="100" cy="100" r="95" fill="#071020" stroke="rgba(56,182,255,0.2)" stroke-width="1.5"/>
-      <path d="M100 44L140 68L140 117L100 141L60 117L60 68Z" fill="none" stroke="#C9A84C" stroke-width="2"/>
-      <circle cx="100" cy="96" r="20" fill="none" stroke="#38B6FF" stroke-width="2"/>
-      <path d="M84 91L95 102L122 75" stroke="#00E5A0" stroke-width="3" stroke-linecap="round" fill="none"/>
-    </svg>
-    <div>
-      <div class="hud-logo-text">الوكالة الوطنية للأمن السيبراني</div>
-      <div class="hud-logo-sub">رحلة داخل الحاسوب — VR</div>
+<!-- ============ SCREEN 2: QUIZ ============ -->
+<div class="screen hidden" id="screen-quiz">
+  <div class="greeting-chip">
+    <span>👋</span>
+    <span id="quizGreeting">مرحباً يا بطل!</span>
+  </div>
+
+  <div class="quiz-header" style="width:100%; max-width:700px;">
+    <span class="question-counter" id="questionCounter">السؤال 1 من 5</span>
+    <div class="progress-bar-wrap" style="flex:1; margin: 0 16px;">
+      <div class="progress-bar-fill" id="progressBar" style="width:20%"></div>
+    </div>
+    <span style="font-size:20px;" id="progressEmoji">⭐</span>
+  </div>
+
+  <div class="question-card" style="max-width:700px; width:100%;">
+    <div class="question-scene" id="questionScene">📱</div>
+    <p class="question-text" id="questionText">جار تحميل السؤال...</p>
+  </div>
+
+  <div class="choices-grid" style="max-width:700px; width:100%;" id="choicesGrid"></div>
+
+  <div class="mascot-feedback" style="max-width:700px;" id="mascotFeedback">
+    <span class="mascot-small">🤖</span>
+    <p class="feedback-text" id="feedbackText">فكّر جيداً واختر الإجابة التي تراها صحيحة! 💭</p>
+  </div>
+</div>
+
+<!-- ============ SCREEN 3: RESULT ============ -->
+<div class="screen hidden" id="screen-result">
+  <div class="result-trophy" id="resultTrophy">🏆</div>
+  <h2 class="result-title" id="resultTitle">أداء رائع!</h2>
+  <div class="score-display" id="starsDisplay"></div>
+
+  <div class="result-card">
+    <div class="result-badge" id="resultBadge">مستكشف ذهبي ⭐</div>
+    <p style="font-size:15px; color:var(--text-muted); margin-bottom:16px;" id="resultMsg">لقد أجبت على X من 5 أسئلة بشكل صحيح!</p>
+
+    <div class="qr-placeholder">
+      <div style="font-size:28px; margin-bottom:4px;">📋</div>
+      <div style="font-size:10px; color:#555;">بطاقتك<br>القبلية</div>
+    </div>
+
+    <p style="font-size:12px; color:#888; margin-top:8px;">احتفظ بهذه البطاقة حتى نهاية الزيارة</p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-primary" onclick="startStory()">انطلق لمغامرة زيد ▶</button>
+    <button class="btn-secondary" onclick="printCard()">🖨️ طباعة البطاقة</button>
+  </div>
+</div>
+
+<!-- ============ SCREEN 4: STORY - ZAID ============ -->
+<div class="screen hidden" id="screen-story">
+  <div class="story-header" style="max-width:720px; width:100%;">
+    <div class="story-title-chip">🎮 مغامرة زيد الرقمية</div>
+    <span class="story-step-counter" id="storyCounter">موقف 1 من 5</span>
+  </div>
+
+  <div class="story-scene-card" style="max-width:720px; width:100%;">
+    <div class="story-visual" id="storyVisual">
+      <span id="storyEmoji1">🧒</span>
+      <span id="storyEmoji2">📱</span>
+      <div class="story-visual-label" id="storySceneLabel">زيد في غرفته</div>
+    </div>
+    <div class="story-body">
+      <div class="character-name">زيد — طفل في مثل عمرك 👦</div>
+      <p class="story-text" id="storyText">جار تحميل القصة...</p>
+      <p class="story-question" id="storyQuestion">ماذا يجب أن يفعل زيد؟</p>
     </div>
   </div>
-  <div class="hud-stage">
-    <div class="stage-dots" id="stageDots"></div>
+
+  <div class="story-choices" style="max-width:720px; width:100%;" id="storyChoices"></div>
+
+  <div class="story-feedback hidden" id="storyFeedback" style="max-width:720px;">
+    <span class="feedback-icon" id="feedbackIcon">✅</span>
+    <div>
+      <p class="feedback-lesson" id="feedbackLesson">ممتاز!</p>
+      <p class="feedback-detail" id="feedbackDetail">شرح الإجابة...</p>
+    </div>
   </div>
-  <div class="hud-score">
-    النقاط: <span class="hud-score-val" id="hudScore">0</span>
-  </div>
+
+  <button class="btn-primary hidden" id="nextStoryBtn" onclick="nextStory()" style="margin-top:4px;">
+    التالي ▶
+  </button>
 </div>
 
-<!-- ══════ ENVIRONMENT LABEL ══════ -->
-<div id="env-label"></div>
+<!-- ============ SCREEN 5: STORY END ============ -->
+<div class="screen hidden" id="screen-story-end">
+  <div style="font-size:80px; animation: trophySpin 0.8s ease;">🦸</div>
+  <h2 class="result-title">أنت بطل الأمان السيبراني! 🛡️</h2>
+  <p class="welcome-sub">لقد تعلّمت مع زيد كيف تحمي نفسك في العالم الرقمي</p>
 
-<!-- ══════ CROSSHAIR ══════ -->
-<div id="crosshair-ring"></div>
-<svg id="gaze-progress" viewBox="0 0 44 44"><circle id="gaze-circle" cx="22" cy="22" r="21"/></svg>
-<div id="crosshair"></div>
-
-<!-- ══════ LOOK HINT ══════ -->
-<div id="look-hint">
-  <span>👀</span>
-  انظر حولك — ابحث عن نقطة التفاعل البرتقالية
-</div>
-
-<!-- ══════ HOTSPOT LABEL ══════ -->
-<div class="hotspot-label" id="hotspotLabel"></div>
-
-<!-- ══════ CANVAS ══════ -->
-<canvas id="vr-canvas"></canvas>
-
-<!-- ══════ SCENE PANEL ══════ -->
-<div id="scene-panel">
-  <div class="panel-stage-label" id="panelLabel"></div>
-  <div class="panel-headline" id="panelHL"></div>
-  <div class="panel-choices" id="panelChoices"></div>
-  <div id="feedback"></div>
-  <div class="panel-footer">
-    <div class="score-pill">النقاط: <span class="score-num" id="panelScore">0</span></div>
-    <button class="next-btn" id="nextBtn" disabled onclick="advanceStage()">التالي ←</button>
+  <div class="lesson-cards" style="max-width:600px;">
+    <div class="lesson-card" style="animation-delay:0.1s">
+      <span class="lesson-icon">🚫</span>
+      <span class="lesson-text">لا نرسل عنواننا أو معلوماتنا الشخصية للغرباء</span>
+    </div>
+    <div class="lesson-card" style="animation-delay:0.2s">
+      <span class="lesson-icon">❌</span>
+      <span class="lesson-text">لا نضغط على الروابط أو النوافذ المريبة</span>
+    </div>
+    <div class="lesson-card" style="animation-delay:0.3s">
+      <span class="lesson-icon">🔒</span>
+      <span class="lesson-text">لا نشارك كلمة مرورنا مع أي أحد حتى الأصدقاء</span>
+    </div>
+    <div class="lesson-card" style="animation-delay:0.4s">
+      <span class="lesson-icon">📸</span>
+      <span class="lesson-text">لا نشارك صور بطاقات العائلة البنكية</span>
+    </div>
+    <div class="lesson-card" style="animation-delay:0.5s">
+      <span class="lesson-icon">👨‍👩‍👧</span>
+      <span class="lesson-text">عند الشك دائماً نخبر أحد والدينا</span>
+    </div>
   </div>
-</div>
 
-<!-- ══════ RESULT ══════ -->
-<div id="result">
-  <div class="result-medal" id="rMedal"></div>
-  <div class="result-title" id="rTitle"></div>
-  <div class="result-sub"   id="rSub"></div>
-  <svg class="result-ring" id="rRing" viewBox="0 0 140 140">
-    <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="10"/>
-    <circle id="rArc" cx="70" cy="70" r="60" fill="none" stroke="#38B6FF" stroke-width="10"
-            stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"
-            transform="rotate(-90 70 70)" style="transition:stroke-dashoffset 1.5s ease"/>
-    <text x="70" y="65" text-anchor="middle" font-family="Tajawal,sans-serif" font-size="26" font-weight="700" fill="#FFD166" id="rScoreText">0</text>
-    <text x="70" y="85" text-anchor="middle" font-family="Tajawal,sans-serif" font-size="12" fill="rgba(255,255,255,0.4)">من ١٠٠</text>
-  </svg>
-  <div class="result-bars" id="rBars"></div>
-  <div class="result-actions">
-    <button class="r-btn primary" onclick="restartVR()">🔄 إعادة الرحلة</button>
-    <button class="r-btn ghost"   onclick="window.location.reload()">🏠 الرئيسية</button>
+  <div class="btn-row" style="margin-top:8px;">
+    <button class="btn-primary" onclick="showPostTest()">اختبار ما بعد الزيارة 🏆</button>
+    <button class="btn-secondary" onclick="printFinalCard()">🖨️ طباعة الشهادة</button>
   </div>
 </div>
 
-<!-- ══════ THREE.JS r128 ══════ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
-/* ══════════════════════════════════════════
-   STAGE DATA
-══════════════════════════════════════════ */
-var STAGES = [
+// ===== DATA =====
+const quizQuestions = [
   {
-    id: 0,
-    envName: '📡 شبكة الحاسوب الداخلية',
-    envColor: 0x020812,
-    gridColor: 0x0A2040,
-    nodeColor: 0x38B6FF,
-    threatColor: 0xFF4D4D,
-    hotspotLabel: '🦠 انقر هنا — تحقيق الاختراق',
-    label: 'المرحلة ١ من ٤',
-    hl: '🦠 البرمجية الخبيثة تدخل الشبكة\nكيف <em>تمكّن الفيروس</em> من الوصول إلى النظام؟',
+    scene: '📱💬',
+    text: 'وصلتك رسالة من شخص غريب يقول: "أرسل لي عنوان منزلك لتصلك هدية!"',
     choices: [
-      { t: 'المستخدم ضغط على رابط مشبوه في رسالة بريد إلكتروني', e: '📧', ok: true },
-      { t: 'الجهاز يعمل بنظام تشغيل محدَّث وآمن',               e: '🛡️', ok: false },
-      { t: 'جدار الحماية كان مفعّلاً بشكل كامل',                  e: '🔥', ok: false },
-      { t: 'كلمة المرور قوية وتحتوي رموز خاصة',                   e: '🔑', ok: false }
+      { icon: '🗑️', text: 'أحذف الرسالة فوراً ولا أرد', correct: true },
+      { icon: '🏠', text: 'أكتب العنوان وأرسله', correct: false },
     ],
-    fb: {
-      ok:  '✅ تحليل صحيح! الروابط المشبوهة في البريد الإلكتروني مسؤولة عن أكثر من ٩٠٪ من الاختراقات. دائماً تحقق من هوية المرسل قبل الضغط على أي رابط.',
-      err: '❌ الإجابة: رابط مشبوه في البريد الإلكتروني (Phishing). هذه أكثر طرق الاختراق شيوعاً — الروابط المزيفة تبدو حقيقية لكنها تفتح ثغرة للمهاجم.'
-    },
-    skills: ['التصيد الاحتيالي']
+    feedbackCorrect: '🌟 ممتاز! لا نرسل عنواننا أبداً لشخص لا نعرفه',
+    feedbackWrong: '🤔 تمهّل! الغرباء على الإنترنت قد يكونون خطرين. أحذف الرسالة دائماً'
   },
   {
-    id: 1,
-    envName: '⚡ مركز معالجة البيانات',
-    envColor: 0x080215,
-    gridColor: 0x1A0A30,
-    nodeColor: 0xA78BFA,
-    threatColor: 0xFF6B00,
-    hotspotLabel: '⚡ انقر هنا — انتشار الفيروس',
-    label: 'المرحلة ٢ من ٤',
-    hl: '⚡ الفيروس ينتشر في النظام\nأي <em>إجراء فوري</em> يوقف انتشاره؟',
+    scene: '💻🎁',
+    text: 'أثناء استخدامك الحاسوب ظهرت نافذة: "اضغط هنا لتربح جائزة!"',
     choices: [
-      { t: 'افصل الجهاز عن الشبكة فوراً لمنع الانتشار', e: '🔌', ok: true },
-      { t: 'أعد تشغيل الجهاز لمحاولة إيقافه',           e: '🔄', ok: false },
-      { t: 'ادفع الفدية للمهاجم للحصول على المفتاح',     e: '💸', ok: false },
-      { t: 'احذف جميع الملفات من الجهاز المصاب',         e: '🗑️', ok: false }
+      { icon: '✖️', text: 'أضغط زر الإغلاق X', correct: true },
+      { icon: '🎁', text: 'أضغط على الزر البراق', correct: false },
     ],
-    fb: {
-      ok:  '✅ قرار احترافي! عزل الجهاز فوراً يمنع الفيروس من الانتشار إلى باقي أجهزة الشبكة. هذه الخطوة الأولى دائماً في الاستجابة للحوادث السيبرانية.',
-      err: '❌ الإجابة الصحيحة: فصل الجهاز عن الشبكة فوراً. هذا "العزل" يوقف انتشار البرمجية الخبيثة. لا تدفع الفدية أبداً — فعلها لا يضمن استعادة بياناتك!'
-    },
-    skills: ['الاستجابة للحوادث']
+    feedbackCorrect: '🛡️ رائع! هذه الرسائل مزيفة تماماً. دائماً أغلق النوافذ المريبة',
+    feedbackWrong: '⚠️ انتبه! هذه الرسائل خدعة للإيقاع بك. أغلق النافذة فوراً بزر X'
   },
   {
-    id: 2,
-    envName: '🔒 طبقة التشفير والبيانات',
-    envColor: 0x010F08,
-    gridColor: 0x052018,
-    nodeColor: 0x00E5A0,
-    threatColor: 0xFF4D4D,
-    hotspotLabel: '🔒 انقر هنا — حماية البيانات',
-    label: 'المرحلة ٣ من ٤',
-    hl: '🔒 المهاجم يحاول اعتراض بياناتك\nأي <em>طبقة حماية</em> تمنعه من قراءتها؟',
+    scene: '💳📸',
+    text: 'طلبت منك لعبة إلكترونية صورة البطاقة البنكية لعائلتك للتسجيل',
     choices: [
-      { t: 'تشفير البيانات (AES-256) يجعلها غير مقروءة', e: '🔐', ok: true },
-      { t: 'حفظ الملفات في مجلد سري على الجهاز',         e: '📁', ok: false },
-      { t: 'وضع كلمة مرور على الملفات فقط',              e: '🔑', ok: false },
-      { t: 'إخفاء الملفات بتغيير امتداداتها',             e: '🙈', ok: false }
+      { icon: '📷', text: 'ألتقط صورة البطاقة وأرسلها', correct: false },
+      { icon: '🚫', text: 'أتجاهل وأغلق اللعبة', correct: true },
     ],
-    fb: {
-      ok:  '✅ ممتاز! التشفير AES-256 يحوّل البيانات إلى شفرة عشوائية — حتى لو اعترضها المهاجم فلن يستطيع قراءتها بدون المفتاح. هذه الطبقة الأقوى في حماية البيانات.',
-      err: '❌ الإجابة: التشفير AES-256. المجلدات السرية وتغيير الامتدادات لا توفر حماية حقيقية — المهاجم المتمرس يجدها بسهولة. التشفير الحقيقي هو الحل.'
-    },
-    skills: ['حماية البيانات']
+    feedbackCorrect: '💪 صحيح! بيانات البطاقة البنكية سرية جداً. لا نشاركها مع أحد',
+    feedbackWrong: '🔴 خطر! بيانات البطاقة البنكية سرية. أخبر والديك فوراً إذا طلبها أحد'
   },
   {
-    id: 3,
-    envName: '🏰 قلعة الأمان الرقمي',
-    envColor: 0x000A14,
-    gridColor: 0x061828,
-    nodeColor: 0xFFD166,
-    threatColor: 0xA78BFA,
-    hotspotLabel: '🏰 انقر هنا — بناء درعك الرقمي',
-    label: 'المرحلة ٤ من ٤',
-    hl: '🏰 بناء الدرع الرقمي الكامل\nأي من هذه الممارسات <em>تُكمل طبقات الحماية</em>؟',
+    scene: '👤🎮',
+    text: 'صديق في لعبتك المفضلة يطلب منك كلمة مرورك الخاصة لتساعده',
     choices: [
-      { t: 'تفعيل المصادقة الثنائية (2FA) على جميع الحسابات', e: '📱', ok: true },
-      { t: 'استخدام نفس كلمة المرور لجميع المواقع لسهولة التذكر', e: '♻️', ok: false },
-      { t: 'تحديث النظام والتطبيقات فور توفر التحديثات',        e: '🔄', ok: true },
-      { t: 'تحميل التطبيقات من أي مصدر على الإنترنت',          e: '⬇️', ok: false }
+      { icon: '🔑', text: 'أعطيه كلمة المرور', correct: false },
+      { icon: '🤐', text: 'أرفض وأحافظ على سري', correct: true },
     ],
-    fb: {
-      ok:  '✅ احترافي! المصادقة الثنائية + التحديثات المنتظمة = درع مزدوج. المصادقة الثنائية تمنع الدخول حتى لو سُرقت كلمة مرورك، والتحديثات تسد الثغرات التي يستغلها المهاجمون.',
-      err: '❌ الإجابتان الصحيحتان: المصادقة الثنائية والتحديثات المنتظمة. كلمة مرور واحدة لكل شيء = كارثة إذا اخترقت إحدى حساباتك!'
-    },
-    skills: ['الحماية المتعددة']
+    feedbackCorrect: '🏅 أحسنت! كلمة المرور سرك أنت فقط. لا تشاركها مع أي أحد',
+    feedbackWrong: '❌ لا! كلمة المرور سرية جداً حتى مع الأصدقاء. لا تشاركها أبداً'
+  },
+  {
+    scene: '🌐👀',
+    text: 'تصفحت الإنترنت ورأيت محتوى غير مناسب أو مخيف',
+    choices: [
+      { icon: '😶', text: 'أخفي الأمر ولا أخبر أحداً', correct: false },
+      { icon: '👨‍👩‍👧', text: 'أغلق وأخبر أحد والديّ فوراً', correct: true },
+    ],
+    feedbackCorrect: '❤️ ممتاز! الوالدان دائماً أفضل من يساعدنا في مثل هذه المواقف',
+    feedbackWrong: '💛 دائماً أخبر والديك! إخبارهم يحميك ولن يغضبوا منك'
   }
 ];
 
-var SKILL_COLORS = ['#38B6FF','#A78BFA','#00E5A0','#FFD166'];
-
-/* ══════════════════════════════════════════
-   STATE
-══════════════════════════════════════════ */
-var currentStage = 0;
-var score = 0;
-var answered = false;
-var stageResults = [];
-var vrRunning = false;
-
-/* ══════════════════════════════════════════
-   THREE.JS SETUP
-══════════════════════════════════════════ */
-var renderer, scene, camera, clock;
-var envObjects = [];      // meshes to dispose on stage change
-var hotspotMesh = null;
-var hotspotGlow = null;
-var particles = [];
-var dataStreams = [];
-var gazing = false;
-var gazeTimer = 0;
-var gazeTarget = 0;
-var mouseX = 0, mouseY = 0;
-var targetRotX = 0, targetRotY = 0;
-var isDragging = false;
-var lastMouseX = 0, lastMouseY = 0;
-var touchStartX = 0, touchStartY = 0;
-
-function initThree() {
-  var canvas = document.getElementById('vr-canvas');
-  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x020812);
-
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x020812, 0.035);
-
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 0, 0);
-
-  clock = new THREE.Clock();
-
-  window.addEventListener('resize', onResize);
-  canvas.addEventListener('mousedown', onMouseDown);
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('mouseup', onMouseUp);
-  canvas.addEventListener('touchstart', onTouchStart, { passive: true });
-  window.addEventListener('touchmove', onTouchMove, { passive: false });
-  window.addEventListener('touchend', onTouchEnd);
-
-  buildStageEnv(0);
-  animate();
-}
-
-function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-/* ══════════════════════════════════════════
-   MOUSE / TOUCH LOOK
-══════════════════════════════════════════ */
-function onMouseDown(e) { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; }
-function onMouseUp()    { isDragging = false; }
-function onMouseMove(e) {
-  if (!vrRunning) return;
-  if (isDragging) {
-    var dx = e.clientX - lastMouseX;
-    var dy = e.clientY - lastMouseY;
-    targetRotY -= dx * 0.003;
-    targetRotX -= dy * 0.002;
-    targetRotX = Math.max(-Math.PI/3, Math.min(Math.PI/3, targetRotX));
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
+const storyScenes = [
+  {
+    emoji1: '🧒', emoji2: '📱', sceneLabel: 'زيد يتصفح هاتفه',
+    text: 'يلعب زيد على هاتفه ويتلقى إشعاراً: "مبروك! لقد ربحت جائزة! اضغط هنا لتستلمها".',
+    question: 'ماذا يجب أن يفعل زيد؟',
+    choices: [
+      { text: 'يضغط على الرابط ليستلم الجائزة', correct: false },
+      { text: 'يتجاهل الرسالة ويخبر والديه', correct: true },
+      { text: 'يرسل الرسالة لأصدقائه', correct: false },
+    ],
+    lesson: '🎯 درس مهم',
+    lessonDetail: 'رسائل "ربحت جائزة" خدعة! الشركات الحقيقية لا ترسل إشعارات مفاجئة. أخبر والديك دائماً'
+  },
+  {
+    emoji1: '🧒', emoji2: '🎮', sceneLabel: 'زيد يلعب أونلاين',
+    text: 'يظهر في لعبة زيد طلب صداقة من شخص غريب "AlMajhoul99" يقول إنه ابن خاله.',
+    question: 'هل يقبل زيد طلب الصداقة؟',
+    choices: [
+      { text: 'نعم، يقبل لأنه يدّعي أنه من العائلة', correct: false },
+      { text: 'يرفض ويخبر والديه بالأمر', correct: true },
+    ],
+    lesson: '🛡️ الهوية على الإنترنت',
+    lessonDetail: 'لا يمكننا التحقق من هوية أحد على الإنترنت. لا نقبل صداقات الغرباء ونخبر الأهل'
+  },
+  {
+    emoji1: '🧒', emoji2: '💻', sceneLabel: 'زيد ينشئ حساباً',
+    text: 'يريد زيد التسجيل في موقع ألعاب ويطلب منه رقم هاتف والده وعنوان المنزل.',
+    question: 'ماذا يفعل زيد؟',
+    choices: [
+      { text: 'يكتب المعلومات ليتمكن من اللعب', correct: false },
+      { text: 'يسأل والديه أولاً قبل إدخال أي معلومات', correct: true },
+    ],
+    lesson: '🔐 المعلومات الشخصية',
+    lessonDetail: 'المعلومات الشخصية مثل الهاتف والعنوان لا تُشارك إلا بإذن الوالدين'
+  },
+  {
+    emoji1: '🧒', emoji2: '🌐', sceneLabel: 'زيد يبحث في الإنترنت',
+    text: 'أثناء بحثه في الإنترنت وجد زيد صوراً مخيفة وغير لائقة في نتائج البحث.',
+    question: 'ما الخطوة الصحيحة التي يتخذها زيد؟',
+    choices: [
+      { text: 'يكمل التصفح ويتجاهل الأمر', correct: false },
+      { text: 'يشارك الصور مع أصدقائه', correct: false },
+      { text: 'يغلق الصفحة فوراً ويخبر والديه', correct: true },
+    ],
+    lesson: '❤️ التواصل مع الأهل',
+    lessonDetail: 'عند رؤية أي محتوى مزعج، أغلق الصفحة مباشرة وأخبر والديك. لن يغضبوا منك!'
+  },
+  {
+    emoji1: '🧒', emoji2: '🔑', sceneLabel: 'زيد وكلمة المرور',
+    text: 'صديقه الحقيقي في المدرسة طلب منه كلمة مرور حسابه في لعبة "Minecraft" ليساعده.',
+    question: 'ماذا يفعل زيد؟',
+    choices: [
+      { text: 'يعطيه كلمة المرور لأنه صديقه الحقيقي', correct: false },
+      { text: 'يرفض بلطف ويقول إن كلمة المرور سرية', correct: true },
+    ],
+    lesson: '🔒 كلمة المرور سر خاص',
+    lessonDetail: 'كلمة المرور سرية حتى مع أقرب الأصدقاء! لو عرفها أحد قد يسرق حسابك'
   }
-}
-function onTouchStart(e) {
-  if (e.touches.length === 1) {
-    isDragging = true;
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    lastMouseX  = touchStartX;
-    lastMouseY  = touchStartY;
-  }
-}
-function onTouchMove(e) {
-  if (!vrRunning || !isDragging || e.touches.length !== 1) return;
-  e.preventDefault();
-  var dx = e.touches[0].clientX - lastMouseX;
-  var dy = e.touches[0].clientY - lastMouseY;
-  targetRotY -= dx * 0.003;
-  targetRotX -= dy * 0.002;
-  targetRotX = Math.max(-Math.PI/3, Math.min(Math.PI/3, targetRotX));
-  lastMouseX = e.touches[0].clientX;
-  lastMouseY = e.touches[0].clientY;
-}
-function onTouchEnd() { isDragging = false; }
+];
 
-/* ══════════════════════════════════════════
-   STAGE ENVIRONMENT BUILDER
-══════════════════════════════════════════ */
-function clearEnv() {
-  for (var i = 0; i < envObjects.length; i++) {
-    scene.remove(envObjects[i]);
-    if (envObjects[i].geometry) envObjects[i].geometry.dispose();
-    if (envObjects[i].material) envObjects[i].material.dispose();
-  }
-  envObjects = [];
-  particles = [];
-  dataStreams = [];
-  hotspotMesh = null;
-  hotspotGlow = null;
-}
+// ===== STATE =====
+let playerName = '';
+let currentQuestion = 0;
+let score = 0;
+let preScore = 0;
+let currentStory = 0;
+let answered = false;
+let storyAnswered = false;
 
-function buildStageEnv(idx) {
-  clearEnv();
-  var s = STAGES[idx];
-  renderer.setClearColor(s.envColor);
-  if (scene.fog) scene.fog.color.setHex(s.envColor);
-
-  // ── Grid floor
-  var gridGeo = new THREE.BufferGeometry();
-  var gridVerts = [];
-  var gSize = 40, gStep = 2;
-  for (var i = -gSize; i <= gSize; i += gStep) {
-    gridVerts.push(i, -3, -gSize, i, -3, gSize);
-    gridVerts.push(-gSize, -3, i, gSize, -3, i);
-  }
-  gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridVerts, 3));
-  var gridMat = new THREE.LineBasicMaterial({ color: s.gridColor, transparent: true, opacity: 0.6 });
-  var grid = new THREE.LineSegments(gridGeo, gridMat);
-  scene.add(grid);
-  envObjects.push(grid);
-
-  // ── Grid ceiling (faint)
-  var gridCeilGeo = new THREE.BufferGeometry();
-  var ceilVerts = [];
-  for (var i = -gSize; i <= gSize; i += gStep * 2) {
-    ceilVerts.push(i, 8, -gSize, i, 8, gSize);
-    ceilVerts.push(-gSize, 8, i, gSize, 8, i);
-  }
-  gridCeilGeo.setAttribute('position', new THREE.Float32BufferAttribute(ceilVerts, 3));
-  var gridCeilMat = new THREE.LineBasicMaterial({ color: s.gridColor, transparent: true, opacity: 0.2 });
-  var gridCeil = new THREE.LineSegments(gridCeilGeo, gridCeilMat);
-  scene.add(gridCeil);
-  envObjects.push(gridCeil);
-
-  // ── Ambient light
-  var ambient = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambient);
-  envObjects.push(ambient);
-
-  var pointLight = new THREE.PointLight(s.nodeColor, 2, 20);
-  pointLight.position.set(0, 2, -6);
-  scene.add(pointLight);
-  envObjects.push(pointLight);
-
-  // ── Node spheres (network nodes floating around)
-  var nodePositions = [
-    [-5, 1, -8], [5, 2, -9], [-7, -1, -6], [7, 0, -7],
-    [-3, 3, -12], [3, -1, -11], [0, 2, -10],
-    [-9, 1, -10], [9, 2, -8], [0, -1, -5]
-  ];
-  for (var i = 0; i < nodePositions.length; i++) {
-    var pos = nodePositions[i];
-    var radius = 0.12 + Math.random() * 0.2;
-    var nodeGeo = new THREE.SphereGeometry(radius, 8, 8);
-    var nodeMat = new THREE.MeshBasicMaterial({
-      color: i % 3 === 0 ? s.threatColor : s.nodeColor,
-      transparent: true, opacity: 0.85
-    });
-    var node = new THREE.Mesh(nodeGeo, nodeMat);
-    node.position.set(pos[0], pos[1], pos[2]);
-    node.userData.baseY = pos[1];
-    node.userData.phase = Math.random() * Math.PI * 2;
-    scene.add(node);
-    envObjects.push(node);
-    particles.push(node);
-  }
-
-  // ── Connection lines between nodes
-  var lineColor = s.nodeColor;
-  var connections = [[0,6],[1,6],[2,5],[3,4],[4,6],[5,6],[7,8],[0,2],[1,3]];
-  for (var c = 0; c < connections.length; c++) {
-    var a = nodePositions[connections[c][0]];
-    var b = nodePositions[connections[c][1]];
-    var lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-      a[0],a[1],a[2], b[0],b[1],b[2]
-    ], 3));
-    var lineMat = new THREE.LineBasicMaterial({ color: lineColor, transparent: true, opacity: 0.2 });
-    var line = new THREE.Line(lineGeo, lineMat);
-    scene.add(line);
-    envObjects.push(line);
-  }
-
-  // ── Data stream particles
-  for (var d = 0; d < 60; d++) {
-    var pGeo = new THREE.SphereGeometry(0.04, 4, 4);
-    var pMat = new THREE.MeshBasicMaterial({
-      color: Math.random() > 0.5 ? s.nodeColor : s.threatColor,
-      transparent: true, opacity: 0.7
-    });
-    var p = new THREE.Mesh(pGeo, pMat);
-    var angle = Math.random() * Math.PI * 2;
-    var r = 3 + Math.random() * 12;
-    p.position.set(
-      Math.cos(angle) * r,
-      (Math.random() - 0.5) * 6,
-      -5 - Math.random() * 15
-    );
-    p.userData.speed   = 0.01 + Math.random() * 0.04;
-    p.userData.angle   = angle;
-    p.userData.radius  = r;
-    p.userData.ySpeed  = (Math.random() - 0.5) * 0.02;
-    scene.add(p);
-    envObjects.push(p);
-    dataStreams.push(p);
-  }
-
-  // ── Vertical data columns (Matrix-like)
-  for (var col = 0; col < 12; col++) {
-    var colAngle = (col / 12) * Math.PI * 2;
-    var colR = 8 + Math.random() * 6;
-    for (var row = 0; row < 5; row++) {
-      var cGeo = new THREE.PlaneGeometry(0.15, 0.4);
-      var cMat = new THREE.MeshBasicMaterial({
-        color: s.nodeColor, transparent: true,
-        opacity: 0.05 + Math.random() * 0.2,
-        side: THREE.DoubleSide
-      });
-      var cube = new THREE.Mesh(cGeo, cMat);
-      cube.position.set(
-        Math.cos(colAngle) * colR,
-        -2 + row * 1.2,
-        Math.sin(colAngle) * colR
-      );
-      cube.lookAt(0, cube.position.y, 0);
-      cube.userData.blinkSpeed = 0.5 + Math.random() * 2;
-      cube.userData.blinkPhase = Math.random() * Math.PI * 2;
-      scene.add(cube);
-      envObjects.push(cube);
-      particles.push(cube);
-    }
-  }
-
-  // ── Central virus / threat core
-  var coreGeo = new THREE.IcosahedronGeometry(0.8, 1);
-  var coreMat = new THREE.MeshBasicMaterial({
-    color: s.threatColor, wireframe: true, transparent: true, opacity: 0.4
-  });
-  var core = new THREE.Mesh(coreGeo, coreMat);
-  core.position.set(0, 0, -8);
-  core.userData.isCore = true;
-  scene.add(core);
-  envObjects.push(core);
-  particles.push(core);
-
-  // ── Inner core solid
-  var innerGeo = new THREE.IcosahedronGeometry(0.5, 0);
-  var innerMat = new THREE.MeshBasicMaterial({
-    color: s.nodeColor, transparent: true, opacity: 0.25
-  });
-  var inner = new THREE.Mesh(innerGeo, innerMat);
-  inner.position.set(0, 0, -8);
-  inner.userData.isInner = true;
-  scene.add(inner);
-  envObjects.push(inner);
-  particles.push(inner);
-
-  // ── Hotspot (interactive point)
-  buildHotspot(s);
-
-  // Update env label
-  var envLbl = document.getElementById('env-label');
-  envLbl.textContent = s.envName;
-  envLbl.classList.add('show');
-  setTimeout(function() { envLbl.classList.remove('show'); }, 3000);
-}
-
-function buildHotspot(s) {
-  // Outer ring
-  var ringGeo = new THREE.TorusGeometry(0.5, 0.04, 8, 32);
-  var ringMat = new THREE.MeshBasicMaterial({ color: 0xFF8C00, transparent: true, opacity: 0.9 });
-  hotspotMesh = new THREE.Mesh(ringGeo, ringMat);
-  hotspotMesh.position.set(0, 0.5, -6);
-  hotspotMesh.userData.isHotspot = true;
-  scene.add(hotspotMesh);
-  envObjects.push(hotspotMesh);
-
-  // Inner sphere
-  var dotGeo = new THREE.SphereGeometry(0.15, 12, 12);
-  var dotMat = new THREE.MeshBasicMaterial({ color: 0xFF8C00 });
-  var dot = new THREE.Mesh(dotGeo, dotMat);
-  dot.position.set(0, 0.5, -6);
-  scene.add(dot);
-  envObjects.push(dot);
-  particles.push(dot);
-
-  // Glow sphere
-  var glowGeo = new THREE.SphereGeometry(0.6, 12, 12);
-  var glowMat = new THREE.MeshBasicMaterial({ color: 0xFF8C00, transparent: true, opacity: 0.07, side: THREE.BackSide });
-  hotspotGlow = new THREE.Mesh(glowGeo, glowMat);
-  hotspotGlow.position.set(0, 0.5, -6);
-  scene.add(hotspotGlow);
-  envObjects.push(hotspotGlow);
-}
-
-/* ══════════════════════════════════════════
-   GAZE / HOTSPOT HIT TEST
-══════════════════════════════════════════ */
-var raycaster = new THREE.Raycaster();
-var screenCenter = new THREE.Vector2(0, 0);
-
-function checkGaze(delta) {
-  if (!vrRunning || answered) { resetGaze(); return; }
-  raycaster.setFromCamera(screenCenter, camera);
-  if (!hotspotMesh) return;
-
-  var hits = raycaster.intersectObject(hotspotMesh);
-  if (hits.length > 0) {
-    // Show label
-    var lbl = document.getElementById('hotspotLabel');
-    lbl.textContent = STAGES[currentStage].hotspotLabel;
-    lbl.classList.add('show');
-
-    // Fill gaze ring
-    gazeTimer += delta;
-    gazeTarget = gazeTimer / 2.0; // 2 seconds to activate
-    var offset = 132 * (1 - gazeTarget);
-    document.getElementById('gaze-circle').style.strokeDashoffset = Math.max(0, offset);
-
-    if (gazeTimer >= 2.0) {
-      resetGaze();
-      openPanel();
-    }
-  } else {
-    resetGaze();
-    document.getElementById('hotspotLabel').classList.remove('show');
+// ===== PARTICLES =====
+function createParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 6 + 2;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      animation-duration:${Math.random()*15+10}s;
+      animation-delay:${Math.random()*10}s;
+    `;
+    container.appendChild(p);
   }
 }
 
-function resetGaze() {
-  gazeTimer = 0;
-  document.getElementById('gaze-circle').style.strokeDashoffset = 132;
+// ===== NAVIGATION =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  window.scrollTo(0, 0);
 }
 
-/* ══════════════════════════════════════════
-   ANIMATE
-══════════════════════════════════════════ */
-function animate() {
-  requestAnimationFrame(animate);
-  var delta = clock.getDelta();
-  var time  = clock.getElapsedTime();
-
-  // Smooth camera look
-  camera.rotation.x += (targetRotX - camera.rotation.x) * 0.08;
-  camera.rotation.y += (targetRotY - camera.rotation.y) * 0.08;
-
-  // Animate particles
-  for (var i = 0; i < particles.length; i++) {
-    var p = particles[i];
-    if (p.userData.isCore) {
-      p.rotation.x += 0.008;
-      p.rotation.y += 0.012;
-      p.position.y = Math.sin(time * 0.5 + 1) * 0.3;
-    } else if (p.userData.isInner) {
-      p.rotation.x -= 0.006;
-      p.rotation.z += 0.010;
-    } else if (p.userData.baseY !== undefined) {
-      p.position.y = p.userData.baseY + Math.sin(time + p.userData.phase) * 0.25;
-    } else if (p.userData.blinkSpeed) {
-      p.material.opacity = 0.05 + Math.abs(Math.sin(time * p.userData.blinkSpeed + p.userData.blinkPhase)) * 0.2;
-    }
-  }
-
-  // Animate data stream particles
-  for (var d = 0; d < dataStreams.length; d++) {
-    var ds = dataStreams[d];
-    ds.userData.angle += ds.userData.speed;
-    ds.position.x = Math.cos(ds.userData.angle) * ds.userData.radius;
-    ds.position.z = -10 + Math.sin(ds.userData.angle * 0.7) * 8;
-    ds.position.y += ds.userData.ySpeed;
-    if (ds.position.y > 4)  ds.userData.ySpeed = -Math.abs(ds.userData.ySpeed);
-    if (ds.position.y < -4) ds.userData.ySpeed =  Math.abs(ds.userData.ySpeed);
-  }
-
-  // Animate hotspot
-  if (hotspotMesh) {
-    hotspotMesh.rotation.z += 0.02;
-    hotspotMesh.rotation.x  = Math.sin(time * 1.2) * 0.3;
-    var pulse = 0.9 + Math.sin(time * 2) * 0.1;
-    hotspotMesh.scale.setScalar(pulse);
-    if (hotspotGlow) hotspotGlow.material.opacity = 0.05 + Math.sin(time * 2) * 0.04;
-  }
-
-  // Gaze check
-  checkGaze(delta);
-
-  renderer.render(scene, camera);
+// ===== QUIZ =====
+function startQuiz() {
+  playerName = document.getElementById('playerName').value.trim() || 'بطل';
+  document.getElementById('quizGreeting').textContent = `مرحباً يا ${playerName}!`;
+  currentQuestion = 0;
+  score = 0;
+  showScreen('screen-quiz');
+  loadQuestion();
 }
 
-/* ══════════════════════════════════════════
-   PANEL OPEN / UI RENDER
-══════════════════════════════════════════ */
-function openPanel() {
-  var s = STAGES[currentStage];
+function loadQuestion() {
+  if (currentQuestion >= quizQuestions.length) { showResult(); return; }
   answered = false;
+  const q = quizQuestions[currentQuestion];
+  const pct = ((currentQuestion + 1) / quizQuestions.length) * 100;
 
-  // Hide look hint
-  document.getElementById('look-hint').classList.remove('show');
+  document.getElementById('questionCounter').textContent = `السؤال ${currentQuestion + 1} من ${quizQuestions.length}`;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressEmoji').textContent = ['⭐','🌟','💫','✨','🏆'][currentQuestion] || '⭐';
+  document.getElementById('questionScene').textContent = q.scene;
+  document.getElementById('questionText').textContent = q.text;
+  document.getElementById('feedbackText').textContent = 'فكّر جيداً واختر الإجابة التي تراها صحيحة! 💭';
 
-  // Panel content
-  document.getElementById('panelLabel').textContent = s.label;
-  document.getElementById('panelHL').innerHTML = s.hl.replace(/\n/g, '<br>');
-  document.getElementById('feedback').className = '';
-  document.getElementById('nextBtn').disabled = true;
-
-  // Choices
-  var wrap = document.getElementById('panelChoices');
-  wrap.innerHTML = '';
-  s.choices.forEach(function(c, i) {
-    var btn = document.createElement('button');
-    btn.className = 'choice-card';
-    btn.innerHTML = '<span class="choice-emoji">' + c.e + '</span><span>' + c.t + '</span>';
-    btn.onclick = function() { handleAnswer(c.ok, i, s); };
-    wrap.appendChild(btn);
+  const grid = document.getElementById('choicesGrid');
+  grid.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-icon">${c.icon}</span><span class="choice-text">${c.text}</span>`;
+    btn.onclick = () => answerQuestion(i, c.correct, btn);
+    grid.appendChild(btn);
   });
-
-  document.getElementById('panelScore').textContent = score;
-  document.getElementById('scene-panel').classList.add('show');
 }
 
-function handleAnswer(isOk, idx, s) {
+function answerQuestion(idx, correct, btn) {
   if (answered) return;
   answered = true;
+  const q = quizQuestions[currentQuestion];
+  const allBtns = document.querySelectorAll('.choice-btn');
+  allBtns.forEach(b => b.disabled = true);
 
-  var btns = document.querySelectorAll('.choice-card');
-  btns.forEach(function(b, i) {
-    b.classList.add('locked');
-    if (s.choices[i].ok)          b.classList.add('correct');
-    else if (i === idx && !isOk)  b.classList.add('wrong');
-  });
-
-  var fb = document.getElementById('feedback');
-  if (isOk) {
-    score += 25;
-    stageResults.push(true);
-    fb.textContent = s.fb.ok;
-    fb.className = 'show ok';
+  if (correct) {
+    score++;
+    btn.classList.add('correct');
+    document.getElementById('feedbackText').textContent = q.feedbackCorrect;
+    document.getElementById('mascotFeedback').style.borderColor = 'rgba(29,158,117,0.4)';
   } else {
-    stageResults.push(false);
-    fb.textContent = s.fb.err;
-    fb.className = 'show err';
+    btn.classList.add('wrong');
+    document.getElementById('feedbackText').textContent = q.feedbackWrong;
+    // highlight correct
+    allBtns.forEach((b, i) => { if (q.choices[i] && q.choices[i].correct) b.classList.add('correct'); });
   }
 
-  document.getElementById('panelScore').textContent   = score;
-  document.getElementById('hudScore').textContent     = score;
-  document.getElementById('nextBtn').disabled         = false;
+  setTimeout(() => {
+    currentQuestion++;
+    loadQuestion();
+  }, 2200);
 }
 
-/* ══════════════════════════════════════════
-   ADVANCE STAGE
-══════════════════════════════════════════ */
-function advanceStage() {
-  document.getElementById('scene-panel').classList.remove('show');
-  currentStage++;
+function showResult() {
+  preScore = score;
+  showScreen('screen-result');
 
-  if (currentStage >= STAGES.length) {
-    setTimeout(showResult, 600);
+  const trophy = score >= 4 ? '🏆' : score >= 2 ? '🥈' : '🎖️';
+  const title = score >= 4 ? 'أداء رائع!' : score >= 2 ? 'جيد جداً!' : 'واصل التعلم!';
+  const badge = score >= 4 ? 'مستكشف ذهبي ⭐' : score >= 2 ? 'مستكشف فضي 🥈' : 'مستكشف برونزي 🥉';
+  const msg = `لقد أجبت على ${score} من 5 أسئلة بشكل صحيح قبل الزيارة!`;
+
+  document.getElementById('resultTrophy').textContent = trophy;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultBadge').textContent = badge;
+  document.getElementById('resultMsg').textContent = msg;
+
+  const stars = document.getElementById('starsDisplay');
+  stars.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const s = document.createElement('span');
+    s.className = 'star' + (i < score ? ' lit' : '');
+    s.textContent = '⭐';
+    s.style.animationDelay = (i * 0.15) + 's';
+    stars.appendChild(s);
+  }
+
+  if (score >= 4) confetti();
+}
+
+// ===== STORY =====
+function startStory() {
+  currentStory = 0;
+  showScreen('screen-story');
+  loadStoryScene();
+}
+
+function loadStoryScene() {
+  if (currentStory >= storyScenes.length) {
+    showScreen('screen-story-end');
+    confetti();
     return;
   }
+  storyAnswered = false;
+  const s = storyScenes[currentStory];
 
-  // Build new env
-  setTimeout(function() {
-    buildStageEnv(currentStage);
-    updateStageDots();
-    setTimeout(showLookHint, 1200);
-  }, 400);
+  document.getElementById('storyCounter').textContent = `موقف ${currentStory + 1} من ${storyScenes.length}`;
+  document.getElementById('storyEmoji1').textContent = s.emoji1;
+  document.getElementById('storyEmoji2').textContent = s.emoji2;
+  document.getElementById('storySceneLabel').textContent = s.sceneLabel;
+  document.getElementById('storyText').textContent = s.text;
+  document.getElementById('storyQuestion').textContent = s.question;
+
+  document.getElementById('storyFeedback').classList.add('hidden');
+  document.getElementById('nextStoryBtn').classList.add('hidden');
+
+  const choicesDiv = document.getElementById('storyChoices');
+  choicesDiv.innerHTML = '';
+  const letters = ['أ', 'ب', 'ج', 'د'];
+  s.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'story-choice';
+    btn.innerHTML = `<span class="choice-letter">${letters[i]}</span><span>${c.text}</span>`;
+    btn.onclick = () => answerStory(c.correct, btn);
+    choicesDiv.appendChild(btn);
+  });
 }
 
-function updateStageDots() {
-  var wrap = document.getElementById('stageDots');
-  wrap.innerHTML = '';
-  for (var i = 0; i < STAGES.length; i++) {
-    var d = document.createElement('div');
-    d.className = 'sdot' + (i < currentStage ? ' done' : i === currentStage ? ' active' : '');
-    wrap.appendChild(d);
-  }
-}
+function answerStory(correct, btn) {
+  if (storyAnswered) return;
+  storyAnswered = true;
+  const s = storyScenes[currentStory];
+  const allBtns = document.querySelectorAll('.story-choice');
+  allBtns.forEach(b => b.disabled = true);
 
-function showLookHint() {
-  if (answered) return;
-  var hint = document.getElementById('look-hint');
-  hint.classList.add('show');
-  setTimeout(function() { hint.classList.remove('show'); }, 4000);
-}
-
-/* ══════════════════════════════════════════
-   RESULT SCREEN
-══════════════════════════════════════════ */
-function showResult() {
-  var correct = stageResults.filter(function(r) { return r; }).length;
-  var medal = '🥉', title = 'مستكشف رقمي', sub = 'واصل التعلم لتصبح محترفاً في الأمن السيبراني!';
-  if (correct === 4) { medal = '🏆'; title = 'بطل الأمن السيبراني!'; sub = 'أداء مثالي — أنت جاهز لمواجهة أي تهديد رقمي!'; }
-  else if (correct >= 3) { medal = '🥇'; title = 'حارس رقمي متقدم!'; sub = 'مهارات ممتازة — قريب جداً من الاحتراف الكامل!'; }
-  else if (correct >= 2) { medal = '🥈'; title = 'متعلم نشيط!'; sub = 'أداء جيد — استمر في التعلم لتحسين مهاراتك!'; }
-
-  document.getElementById('rMedal').textContent = medal;
-  document.getElementById('rTitle').textContent = title;
-  document.getElementById('rSub').textContent   = sub;
-  document.getElementById('rScoreText').textContent = score;
-
-  // Ring animation
-  var pct = score / 100;
-  document.getElementById('rArc').style.strokeDashoffset = 377 * (1 - pct);
-
-  // Skill bars
-  var skills = [
-    { l: 'التصيد الاحتيالي',    v: stageResults[0] ? 100 : 28, c: '#38B6FF' },
-    { l: 'الاستجابة للحوادث',    v: stageResults[1] ? 100 : 22, c: '#A78BFA' },
-    { l: 'حماية البيانات',       v: stageResults[2] ? 100 : 30, c: '#00E5A0' },
-    { l: 'الحماية المتعددة',     v: stageResults[3] ? 100 : 25, c: '#FFD166' }
-  ];
-
-  var barsEl = document.getElementById('rBars');
-  barsEl.innerHTML = skills.map(function(s) {
-    return '<div class="rbar-row">' +
-      '<span class="rbar-label">' + s.l + '</span>' +
-      '<div class="rbar-track">' +
-        '<div class="rbar-fill" style="width:0%;background:' + s.c + '" data-w="' + s.v + '"></div>' +
-      '</div></div>';
-  }).join('');
-
-  document.getElementById('result').classList.add('show');
-  setTimeout(function() {
-    document.querySelectorAll('.rbar-fill').forEach(function(f) {
-      f.style.width = f.dataset.w + '%';
+  if (correct) {
+    btn.classList.add('correct-choice');
+  } else {
+    btn.classList.add('wrong-choice');
+    allBtns.forEach(b => {
+      const txt = b.querySelector('span:last-child').textContent;
+      const found = s.choices.find(c => c.correct && c.text === txt);
+      if (found) b.classList.add('correct-choice');
     });
-  }, 300);
-}
-
-function restartVR() {
-  currentStage = 0;
-  score = 0;
-  answered = false;
-  stageResults = [];
-  document.getElementById('result').classList.remove('show');
-  document.getElementById('hudScore').textContent = '0';
-  buildStageEnv(0);
-  updateStageDots();
-  setTimeout(showLookHint, 1000);
-}
-
-/* ══════════════════════════════════════════
-   CANVAS CLICK — activate hotspot manually (for touch/kiosk)
-══════════════════════════════════════════ */
-document.getElementById('vr-canvas').addEventListener('click', function(e) {
-  if (!vrRunning || answered) return;
-  var rect = this.getBoundingClientRect();
-  var x =  ((e.clientX - rect.left)  / rect.width)  * 2 - 1;
-  var y = -((e.clientY - rect.top)   / rect.height) * 2 + 1;
-  var clickRay = new THREE.Raycaster();
-  clickRay.setFromCamera(new THREE.Vector2(x, y), camera);
-  if (hotspotMesh) {
-    var hits = clickRay.intersectObject(hotspotMesh, true);
-    // also check nearby (expand hotspot search)
-    var center = new THREE.Vector2(0,0);
-    var centerRay = new THREE.Raycaster();
-    centerRay.setFromCamera(center, camera);
-    var centered = centerRay.intersectObject(hotspotMesh, true);
-    if (hits.length > 0 || centered.length > 0) {
-      resetGaze();
-      openPanel();
-    }
   }
-});
 
-/* ══════════════════════════════════════════
-   START BUTTON
-══════════════════════════════════════════ */
-document.getElementById('startBtn').addEventListener('click', function() {
-  vrRunning = true;
-  var intro = document.getElementById('intro');
-  intro.classList.add('fade');
-  setTimeout(function() { intro.style.display = 'none'; }, 800);
+  const fb = document.getElementById('storyFeedback');
+  document.getElementById('feedbackIcon').textContent = correct ? '✅' : '💡';
+  document.getElementById('feedbackLesson').textContent = s.lesson;
+  document.getElementById('feedbackDetail').textContent = s.lessonDetail;
+  fb.classList.remove('hidden');
+  document.getElementById('nextStoryBtn').classList.remove('hidden');
+}
 
-  document.getElementById('hud').classList.add('show');
-  document.getElementById('crosshair').classList.add('show');
-  document.getElementById('crosshair-ring').classList.add('show');
-  document.getElementById('gaze-progress').style.opacity = '1';
+function nextStory() {
+  currentStory++;
+  loadStoryScene();
+}
 
-  updateStageDots();
-  initThree();
-  setTimeout(showLookHint, 1500);
-});
+// ===== POST TEST =====
+function showPostTest() {
+  currentQuestion = 0;
+  score = 0;
+  showScreen('screen-quiz');
+  document.getElementById('quizGreeting').textContent = `مرحباً مجدداً يا ${playerName}! لنرى كم تعلّمت اليوم!`;
+  loadQuestion();
+  // Override result screen for post
+  window._isPostTest = true;
+}
 
+// ===== CONFETTI =====
+function confetti() {
+  const layer = document.getElementById('confetti-layer');
+  const colors = ['#1D9E75','#EF9F27','#E24B4A','#5DCAA5','#FAC775','#fff'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${Math.random()*2+1.5}s;
+      animation-delay:${Math.random()*0.5}s;
+      width:${Math.random()*8+5}px;
+      height:${Math.random()*8+5}px;
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+    `;
+    layer.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
+}
+
+// ===== PRINT =====
+function printCard() {
+  const badge = score >= 4 ? 'ذهبي' : score >= 2 ? 'فضي' : 'برونزي';
+  alert(`🖨️ جاري طباعة بطاقة ${playerName}\nالنتيجة القبلية: ${score}/5 — ${badge}\n\n(في النظام الحقيقي ستُطبع بطاقة QR فعلية)`);
+}
+
+function printFinalCard() {
+  alert(`🖨️ جاري طباعة شهادة ${playerName}\nأنت الآن بطل الأمان السيبراني!\n\n(في النظام الحقيقي ستُطبع شهادة ملوّنة)`);
+}
+
+// ===== INIT =====
+createParticles();
 </script>
 </body>
 </html>
