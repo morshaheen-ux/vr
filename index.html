@@ -1,3272 +1,970 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyber Room — Admin Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>رحلة داخل الحاسوب</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0d1117;
-  --bg2: #161b22;
-  --bg3: #21262d;
-  --bg4: #30363d;
-  --border: #30363d;
-  --border2: #21262d;
-  --text: #e6edf3;
-  --text2: #8b949e;
-  --text3: #6e7681;
-  --teal: #1D9E75;
-  --teal2: #9FE1CB;
-  --teal-bg: rgba(29,158,117,0.1);
-  --teal-border: rgba(29,158,117,0.3);
-  --gold: #d29922;
-  --gold-bg: rgba(210,153,34,0.1);
-  --red: #f85149;
-  --red-bg: rgba(248,81,73,0.1);
-  --blue: #388bfd;
-  --blue-bg: rgba(56,139,253,0.1);
-  --purple: #a371f7;
-  --purple-bg: rgba(163,113,247,0.1);
-  --radius: 8px;
-  --radius-lg: 12px;
-  --sidebar-w: 240px;
-}
-
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  height: 100vh;
+  font-family: 'Tajawal', sans-serif;
+  background: #000;
+  color: #00ff99;
   overflow: hidden;
-  display: flex;
-  font-size: 13px;
+  width: 100vw; height: 100vh;
+  direction: rtl;
+  user-select: none;
 }
 
-/* ===== SIDEBAR ===== */
-.sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;
+#canvas-container {
+  position: fixed; inset: 0;
+  cursor: grab;
+}
+#canvas-container:active { cursor: grabbing; }
+
+canvas { display: block; }
+
+/* ===== OVERLAY UI ===== */
+#ui-overlay {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 20;
 }
 
-.sidebar-logo {
-  padding: 18px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Top HUD */
+.hud-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
 }
 
-.logo-icon {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--teal), #0f6e56);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
+.hud-title {
+  font-size: clamp(14px, 3vw, 20px);
+  font-weight: 900;
+  color: #00ff99;
+  text-shadow: 0 0 20px rgba(0,255,153,0.8);
+  letter-spacing: 1px;
 }
 
-.logo-text { font-size: 13px; font-weight: 600; line-height: 1.3; }
-.logo-sub { font-size: 11px; color: var(--text3); }
-
-.sidebar-section {
-  padding: 12px 8px 4px;
+.hud-phase {
+  font-size: clamp(11px, 2vw, 14px);
+  color: rgba(0,255,153,0.6);
+  font-weight: 700;
 }
 
-.sidebar-section-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text3);
+.hud-controls {
+  font-size: 11px;
+  color: rgba(0,255,153,0.4);
+  text-align: left;
+  direction: ltr;
+  line-height: 1.6;
+}
+
+/* Bottom HUD */
+.hud-bottom {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+
+.phase-bar {
+  display: flex; gap: 6px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.phase-dot {
+  width: 28px; height: 4px;
+  border-radius: 2px;
+  background: rgba(0,255,153,0.2);
+  transition: background 0.4s;
+}
+.phase-dot.active { background: #00ff99; box-shadow: 0 0 8px rgba(0,255,153,0.8); }
+.phase-dot.done { background: rgba(0,255,153,0.5); }
+
+.narrative-box {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.narrative-phase-label {
+  font-size: 11px;
+  color: rgba(0,255,153,0.5);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  padding: 0 8px;
+  letter-spacing: 0.1em;
   margin-bottom: 4px;
 }
 
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 8px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  color: var(--text2);
-  font-size: 13px;
-  font-weight: 400;
-  transition: all 0.15s;
-  text-decoration: none;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
+.narrative-text {
+  font-size: clamp(14px, 3vw, 18px);
+  font-weight: 700;
+  color: #e8f4fd;
+  line-height: 1.6;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  animation: fadeInUp 0.5s ease;
 }
 
-.nav-item:hover { background: var(--bg3); color: var(--text); }
-.nav-item.active { background: var(--teal-bg); color: var(--teal2); font-weight: 500; }
-.nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
-.nav-badge {
-  margin-left: auto;
-  background: var(--teal);
-  color: white;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 10px;
-  min-width: 18px;
-  text-align: center;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.sidebar-footer {
-  margin-top: auto;
-  padding: 12px 8px;
-  border-top: 1px solid var(--border);
-}
-
-.user-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.user-chip:hover { background: var(--bg3); }
-
-.avatar {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--purple), #7c3aed);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; color: white;
-  flex-shrink: 0;
-}
-
-.user-info { flex: 1; min-width: 0; }
-.user-name { font-size: 12px; font-weight: 500; }
-.user-role { font-size: 10px; color: var(--text3); }
-
-/* ===== MAIN ===== */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
-
-.topbar {
-  height: 52px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  gap: 12px;
-  flex-shrink: 0;
-  background: var(--bg2);
-}
-
-.topbar-title { font-size: 14px; font-weight: 600; }
-.topbar-sub { font-size: 12px; color: var(--text3); margin-left: 4px; }
-
-.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  font-size: 12px; font-weight: 500;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer; border: none;
-  transition: all 0.15s;
-}
-
-.btn-primary {
-  background: var(--teal);
-  color: white;
-}
-.btn-primary:hover { background: #0f6e56; }
-
-.btn-secondary {
-  background: var(--bg3);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-.btn-secondary:hover { background: var(--bg4); }
-
-.btn-danger {
-  background: var(--red-bg);
-  color: var(--red);
-  border: 1px solid rgba(248,81,73,0.3);
-}
-.btn-danger:hover { background: rgba(248,81,73,0.2); }
-
-.btn-ghost {
-  background: none;
-  color: var(--text2);
-  border: 1px solid transparent;
-}
-.btn-ghost:hover { background: var(--bg3); color: var(--text); }
-
-/* ===== CONTENT ===== */
-.content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-/* PAGES */
-.page { display: none; }
-.page.active { display: block; }
-
-/* ===== STATS GRID ===== */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-}
-
-.stat-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing:.04em; }
-.stat-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
-.stat-delta { font-size: 11px; color: var(--text3); }
-.stat-delta.up { color: var(--teal); }
-.stat-delta.down { color: var(--red); }
-
-/* ===== CARD ===== */
-.card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.card-title { font-size: 13px; font-weight: 600; }
-.card-sub { font-size: 11px; color: var(--text3); margin-left: auto; }
-
-.card-body { padding: 16px; }
-
-/* ===== TABLE ===== */
-.table-wrap { overflow-x: auto; }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-th {
-  text-align: left;
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg3);
-  white-space: nowrap;
-}
-
-td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border2);
-  color: var(--text);
-  vertical-align: middle;
-}
-
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,0.02); }
-
-/* ===== BADGE ===== */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px; font-weight: 500;
-}
-
-.badge-green { background: var(--teal-bg); color: var(--teal2); border: 1px solid var(--teal-border); }
-.badge-gold { background: var(--gold-bg); color: var(--gold); border: 1px solid rgba(210,153,34,0.3); }
-.badge-red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
-.badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(56,139,253,0.3); }
-.badge-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(163,113,247,0.3); }
-.badge-gray { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-
-/* ===== GRID 2COL ===== */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-
-/* ===== FORM ===== */
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
-.form-label span { color: var(--red); margin-left: 2px; }
-
-.form-input, .form-select, .form-textarea {
-  width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 12px;
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  border-color: var(--teal);
-}
-
-.form-select { cursor: pointer; }
-.form-textarea { resize: vertical; min-height: 80px; }
-
-.form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
-
-/* ===== MODAL ===== */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 1000;
-  display: none;
-  align-items: center;
+.nav-buttons {
+  display: flex; gap: 10px;
   justify-content: center;
-  padding: 20px;
+  margin-top: 12px;
+  pointer-events: all;
 }
 
-.modal-overlay.open { display: flex; }
-
-.modal {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-}
-
-.modal-title { font-size: 14px; font-weight: 600; }
-.modal-close {
-  margin-left: auto;
-  background: none; border: none;
-  color: var(--text3); cursor: pointer;
-  font-size: 18px; line-height: 1;
-  padding: 4px; border-radius: 4px;
-  transition: color 0.15s;
-}
-.modal-close:hover { color: var(--text); }
-
-.modal-body { padding: 20px; }
-.modal-footer {
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-  display: flex; gap: 8px; justify-content: flex-end;
-}
-
-/* ===== QUESTION BUILDER ===== */
-.choice-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 6px;
-}
-
-.choice-correct {
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
+.nav-btn {
+  background: rgba(0,255,153,0.1);
+  border: 1px solid rgba(0,255,153,0.4);
+  border-radius: 50px;
+  padding: 10px 28px;
+  font-size: 14px; font-weight: 700;
+  font-family: 'Tajawal', sans-serif;
+  color: #00ff99;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
 
-.choice-correct.selected {
-  border-color: var(--teal);
-  background: var(--teal);
+.nav-btn:hover {
+  background: rgba(0,255,153,0.2);
+  box-shadow: 0 0 20px rgba(0,255,153,0.3);
+  transform: translateY(-2px);
 }
 
-.choice-input {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  outline: none;
+.nav-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+
+.nav-btn.primary {
+  background: #00ff99;
+  color: #000;
+  font-weight: 900;
+}
+.nav-btn.primary:hover { background: #00cc7a; box-shadow: 0 0 30px rgba(0,255,153,0.5); }
+
+/* Alert banner */
+.alert-banner {
+  position: absolute; top: 70px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,50,50,0.15);
+  border: 1px solid rgba(255,50,50,0.6);
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-size: 14px; font-weight: 700;
+  color: #ff4444;
+  text-shadow: 0 0 10px rgba(255,50,50,0.5);
+  animation: alertPulse 1s ease-in-out infinite, fadeInUp 0.3s ease;
+  white-space: nowrap;
+  display: none;
 }
 
-.choice-emoji {
-  width: 36px; height: 32px;
-  background: var(--bg4);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  text-align: center;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0;
+@keyframes alertPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(255,50,50,0.2); }
+  50% { box-shadow: 0 0 30px rgba(255,50,50,0.5); }
 }
 
-.choice-remove {
-  background: none; border: none;
-  color: var(--text3); cursor: pointer;
-  font-size: 16px; padding: 2px;
-  border-radius: 4px;
-  transition: color 0.15s;
-}
-.choice-remove:hover { color: var(--red); }
-
-/* ===== ACTIVITY CARDS ===== */
-.activity-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.activity-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: border-color 0.15s;
-  cursor: pointer;
-}
-
-.activity-card:hover { border-color: var(--teal-border); }
-
-.activity-card-top {
-  height: 80px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 36px;
-  position: relative;
-}
-
-.activity-card-body { padding: 12px; }
-.activity-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-.activity-card-sub { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
-.activity-card-footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-
-.activity-status-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--teal);
-}
-
-/* ===== PROGRESS BAR ===== */
-.progress-bar {
-  height: 6px;
-  background: var(--bg4);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 3px;
-  background: var(--teal);
-  transition: width 0.3s;
-}
-
-/* ===== MINI CHART ===== */
-.chart-bars {
-  display: flex; align-items: flex-end; gap: 3px;
-  height: 50px;
-  padding-top: 4px;
-}
-
-.chart-bar {
-  flex: 1;
-  background: var(--teal-bg);
-  border-top: 2px solid var(--teal);
-  border-radius: 2px 2px 0 0;
-  transition: background 0.15s;
-  cursor: pointer;
-  min-height: 4px;
-}
-
-.chart-bar:hover { background: rgba(29,158,117,0.25); }
-
-/* ===== SEARCH ===== */
-.search-wrap {
-  position: relative;
-  flex: 1;
-  max-width: 280px;
-}
-
-.search-input {
-  width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 7px 12px 7px 32px;
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  color: var(--text);
-  outline: none;
-}
-
-.search-input:focus { border-color: var(--teal); }
-.search-icon {
-  position: absolute; left: 10px; top: 50%;
-  transform: translateY(-50%);
-  font-size: 13px; color: var(--text3);
-  pointer-events: none;
-}
-
-/* ===== TABS ===== */
-.tabs {
-  display: flex; gap: 2px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-}
-
-.tab {
-  padding: 8px 14px;
-  font-size: 12px; font-weight: 500;
-  color: var(--text3);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 0.15s;
-  background: none; border-top: none; border-left: none; border-right: none;
-  font-family: 'Inter', sans-serif;
-}
-
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--teal2); border-bottom-color: var(--teal); }
-
-/* ===== TOGGLE ===== */
-.toggle {
-  width: 36px; height: 20px;
-  background: var(--bg4);
-  border-radius: 10px;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-  border: none;
-  flex-shrink: 0;
-}
-
-.toggle.on { background: var(--teal); }
-
-.toggle::after {
-  content: '';
+/* Action prompt */
+.action-prompt {
   position: absolute;
-  width: 14px; height: 14px;
-  background: white;
-  border-radius: 50%;
-  top: 3px; left: 3px;
-  transition: transform 0.2s;
-}
-
-.toggle.on::after { transform: translateX(16px); }
-
-/* ===== EMPTY STATE ===== */
-.empty-state {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
-  padding: 48px 20px;
-  color: var(--text3);
+  pointer-events: all;
+  animation: fadeInUp 0.4s ease;
 }
 
-.empty-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-title { font-size: 14px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
-.empty-sub { font-size: 12px; }
-
-/* ===== SCROLLBAR ===== */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text3); }
-
-/* ===== NOTIFICATION DOT ===== */
-.notif-dot {
-  width: 8px; height: 8px;
-  background: var(--teal);
-  border-radius: 50%;
-  flex-shrink: 0;
+.action-title {
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(0,255,153,0.6);
+  margin-bottom: 8px;
 }
 
-/* ===== SECTION HEADER ===== */
-.section-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 16px;
+.action-sub {
+  font-size: clamp(13px, 2.5vw, 16px);
+  color: rgba(232,244,253,0.7);
+  margin-bottom: 20px;
+  line-height: 1.6;
 }
 
-.section-title { font-size: 15px; font-weight: 600; }
-
-/* ===== QR PREVIEW ===== */
-.qr-preview {
-  width: 80px; height: 80px;
-  background: white;
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9px; color: #333; text-align: center;
-  padding: 6px;
-  line-height: 1.4;
+.action-choices {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* ===== MOBILE OVERLAY & HAMBURGER ===== */
-.sidebar-overlay {
-  display: none;
+.choice-btn {
+  background: rgba(0,255,153,0.08);
+  border: 2px solid rgba(0,255,153,0.3);
+  border-radius: 16px;
+  padding: 16px 28px;
+  font-size: 15px; font-weight: 700;
+  font-family: 'Tajawal', sans-serif;
+  color: #00ff99;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.choice-btn:hover {
+  background: rgba(0,255,153,0.15);
+  border-color: #00ff99;
+  transform: translateY(-3px);
+  box-shadow: 0 0 30px rgba(0,255,153,0.2);
+}
+.choice-btn .choice-icon { font-size: 28px; }
+
+/* Welcome screen overlay */
+#welcome-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 199;
-  backdrop-filter: blur(2px);
+  background: radial-gradient(ellipse at center, #050c1a 0%, #000 100%);
+  z-index: 100;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 24px; text-align: center; padding: 20px;
+  transition: opacity 0.8s ease;
 }
 
-.hamburger {
+.vr-icon {
+  font-size: 80px;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(0,255,153,0.6));
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.vr-title {
+  font-size: clamp(28px, 6vw, 52px);
+  font-weight: 900;
+  line-height: 1.2;
+  text-shadow: 0 0 40px rgba(0,255,153,0.5);
+}
+.vr-title span { color: #00ff99; }
+
+.vr-sub {
+  font-size: clamp(14px, 3vw, 18px);
+  color: rgba(232,244,253,0.6);
+  max-width: 500px; line-height: 1.7;
+}
+
+.vr-tips {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vr-tip {
+  background: rgba(0,255,153,0.08);
+  border: 1px solid rgba(0,255,153,0.2);
+  border-radius: 50px;
+  padding: 6px 16px;
+  font-size: 12px; font-weight: 600;
+  color: rgba(0,255,153,0.7);
+}
+
+.start-vr-btn {
+  background: linear-gradient(135deg, #00ff99, #00cc7a);
+  border: none; border-radius: 50px;
+  padding: 18px 56px;
+  font-size: 20px; font-weight: 900;
+  font-family: 'Tajawal', sans-serif;
+  color: #000; cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 40px rgba(0,255,153,0.4);
+  letter-spacing: 0.5px;
+}
+.start-vr-btn:hover { transform: translateY(-3px); box-shadow: 0 0 60px rgba(0,255,153,0.6); }
+
+/* End screen */
+#end-overlay {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, #050c1a 0%, #000 100%);
+  z-index: 100;
   display: none;
-  background: none; border: none;
-  color: var(--text); cursor: pointer;
-  padding: 6px; border-radius: var(--radius);
-  font-size: 20px; line-height: 1;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-.hamburger:hover { background: var(--bg3); }
-
-/* ===== RESPONSIVE BREAKPOINTS ===== */
-
-/* Tablet: 600–1024px */
-@media (max-width: 1024px) {
-  :root { --sidebar-w: 220px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .activity-grid { grid-template-columns: repeat(2, 1fr); }
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px; text-align: center; padding: 20px;
 }
 
-/* Mobile: ≤768px — sidebar becomes a drawer */
-@media (max-width: 768px) {
-  :root { --sidebar-w: 260px; }
+.end-icon { font-size: 80px; animation: float 2s ease-in-out infinite; }
+.end-title { font-size: clamp(26px, 5vw, 44px); font-weight: 900; color: #00ff99; text-shadow: 0 0 30px rgba(0,255,153,0.5); }
+.end-sub { font-size: clamp(14px, 2.5vw, 18px); color: rgba(232,244,253,0.7); max-width: 500px; line-height: 1.7; }
 
-  body { overflow: hidden; }
-
-  .sidebar {
-    position: fixed;
-    top: 0; left: 0;
-    height: 100vh;
-    z-index: 200;
-    transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
-  }
-
-  .sidebar.open { transform: translateX(0); }
-  .sidebar-overlay.open { display: block; }
-
-  .hamburger { display: flex; align-items: center; justify-content: center; }
-
-  .main { width: 100%; }
-
-  .topbar { padding: 0 12px; gap: 8px; }
-  .topbar-title { font-size: 13px; }
-  .topbar-sub { display: none; }
-  .topbar-actions { gap: 6px; }
-  .topbar-actions .btn { padding: 5px 10px; font-size: 11px; }
-  .topbar-actions .btn:not(:last-child) { display: none; }
-  .topbar-actions .btn:last-child { display: inline-flex; }
-
-  .content { padding: 12px; }
-
-  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .stat-card { padding: 12px; }
-  .stat-value { font-size: 22px; }
-
-  .grid-2 { grid-template-columns: 1fr; gap: 10px; }
-  .grid-3 { grid-template-columns: 1fr; gap: 10px; }
-
-  .activity-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-
-  .section-header {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .section-header .search-wrap { order: 1; flex: 1 1 100%; max-width: 100%; }
-  .section-header > div:last-child { order: 2; margin-left: 0; width: 100%; display: flex; gap: 6px; flex-wrap: wrap; }
-  .section-header select { flex: 1; }
-
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { min-width: 520px; }
-
-  .card-header { flex-wrap: wrap; gap: 6px; }
-
-  .modal { max-width: 100%; margin: 0; border-radius: 16px 16px 0 0; }
-  .modal-overlay { align-items: flex-end; padding: 0; }
-
-  /* Hide less important table columns on mobile */
-  th:nth-child(5), td:nth-child(5),
-  th:nth-child(6), td:nth-child(6) {
-    display: none;
-  }
-
-  /* Dev portal mobile adjustments */
-  #page-dev-builder .grid-2 { grid-template-columns: 1fr; }
-  #page-dev-api .grid-2 { grid-template-columns: 1fr; }
-  #page-dev-hooks .grid-2 { grid-template-columns: 1fr; }
-  #page-dev-deploy .grid-2 { grid-template-columns: 1fr; }
-
-  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .tab { white-space: nowrap; }
+.lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  width: 100%; max-width: 700px;
 }
 
-/* Small mobile: ≤480px */
-@media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .stat-value { font-size: 20px; }
-  .stat-label { font-size: 10px; }
-
-  .activity-grid { grid-template-columns: 1fr; }
-
-  .activity-card-top { height: 60px; }
-  .activity-card-top span { font-size: 28px !important; }
-
-  .topbar { height: 48px; }
-
-  .btn { padding: 5px 10px; font-size: 11px; }
-
-  /* Stack badge and action buttons in table */
-  th:nth-child(4), td:nth-child(4) { display: none; }
-
-  .modal-body { padding: 14px; }
-  .modal-header { padding: 12px 14px; }
-
-  .grid-2.modal-grid { grid-template-columns: 1fr; }
-
-  pre, .form-textarea[style*="JetBrains"] { font-size: 10px; }
+.lesson-item {
+  background: rgba(0,255,153,0.06);
+  border: 1px solid rgba(0,255,153,0.2);
+  border-radius: 14px;
+  padding: 14px;
+  text-align: right;
+  animation: fadeInUp 0.5s ease both;
 }
 
-/* ===== BOTTOM NAV BAR (mobile only) ===== */
-.bottom-nav {
+.lesson-item-icon { font-size: 24px; margin-bottom: 6px; }
+.lesson-item-text { font-size: 13px; font-weight: 600; line-height: 1.5; color: rgba(232,244,253,0.85); }
+
+/* Loading bar */
+#loading-bar {
+  position: fixed; bottom: 0; left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00ff99, #4db8ff);
+  transition: width 0.3s ease;
+  z-index: 200;
+  box-shadow: 0 0 10px rgba(0,255,153,0.8);
+}
+
+/* Mobile joystick hint */
+.mobile-hint {
   display: none;
+  position: absolute; bottom: 130px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px; color: rgba(0,255,153,0.4);
+  text-align: center;
 }
 
-@media (max-width: 768px) {
-  .bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 56px;
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    z-index: 100;
-    align-items: stretch;
-  }
-
-  .bottom-nav-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    background: none;
-    border: none;
-    color: var(--text3);
-    cursor: pointer;
-    font-size: 9px;
-    font-family: Inter, sans-serif;
-    font-weight: 500;
-    transition: color 0.15s;
-    padding: 0;
-  }
-
-  .bottom-nav-item .bn-icon { font-size: 18px; }
-  .bottom-nav-item.active { color: var(--teal); }
-  .bottom-nav-item:hover { color: var(--text); }
-
-  /* Push content above bottom nav */
-  .content { padding-bottom: 68px; }
-}
-
-/* ===== MOBILE ROLE SWITCHER ===== */
-@media (max-width: 768px) {
-  .role-switcher-mobile {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .role-switcher-mobile button {
-    flex: 1;
-    padding: 7px 4px;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: Inter, sans-serif;
-    cursor: pointer;
-    background: var(--bg3);
-    color: var(--text2);
-    transition: all 0.2s;
-  }
-}
-
-/* ===== TOUCH IMPROVEMENTS ===== */
 @media (pointer: coarse) {
-  .btn { min-height: 38px; }
-  .nav-item { min-height: 40px; }
-  .choice-correct { width: 20px; height: 20px; }
-  input, select, textarea { font-size: 16px !important; } /* prevent iOS zoom */
-  .form-select { font-size: 16px !important; }
-}
-
-/* ===== SAFE AREA (notch phones) ===== */
-@supports (padding: env(safe-area-inset-bottom)) {
-  .bottom-nav { padding-bottom: env(safe-area-inset-bottom); height: calc(56px + env(safe-area-inset-bottom)); }
-  .content { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(16px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes drawerIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  .mobile-hint { display: block; }
+  .hud-controls { display: none; }
 }
 </style>
 </head>
 <body>
 
-<!-- Mobile sidebar overlay -->
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<!-- Loading bar -->
+<div id="loading-bar" style="width:0%"></div>
 
-<!-- ===== SIDEBAR ===== -->
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">🛡️</div>
+<!-- Welcome overlay -->
+<div id="welcome-overlay">
+  <div class="vr-icon">🖥️</div>
+  <h1 class="vr-title">رحلة <span>داخل</span> الحاسوب</h1>
+  <p class="vr-sub">استعد للدخول إلى العالم الرقمي من الداخل — شاهد كيف تحدث الهجمات السيبرانية وكيف نتصدى لها</p>
+  <div class="vr-tips">
+    <span class="vr-tip">🖱️ اسحب للنظر حولك</span>
+    <span class="vr-tip">📱 حرّك الشاشة باللمس</span>
+    <span class="vr-tip">⌨️ WASD للتحرك</span>
+    <span class="vr-tip">🎮 تجربة تفاعلية كاملة</span>
+  </div>
+  <button class="start-vr-btn" onclick="startExperience()">ادخل إلى الحاسوب 🚀</button>
+</div>
+
+<!-- 3D Canvas -->
+<div id="canvas-container"></div>
+
+<!-- End overlay -->
+<div id="end-overlay">
+  <div class="end-icon">🛡️</div>
+  <h2 class="end-title">لقد أنقذت الحاسوب! 🎉</h2>
+  <p class="end-sub">تعلّمت كيف تعمل الهجمات السيبرانية من الداخل وكيف تتصدى لها بأدوات الحماية الصحيحة</p>
+
+  <div class="lessons-grid">
+    <div class="lesson-item" style="animation-delay:.1s">
+      <div class="lesson-item-icon">🦠</div>
+      <div class="lesson-item-text">البرمجيات الخبيثة تدخل عبر روابط مشبوهة وملفات غير موثوقة</div>
+    </div>
+    <div class="lesson-item" style="animation-delay:.2s">
+      <div class="lesson-item-icon">🔥</div>
+      <div class="lesson-item-text">جدار الحماية يوقف الاتصالات غير المصرح بها فور اكتشافها</div>
+    </div>
+    <div class="lesson-item" style="animation-delay:.3s">
+      <div class="lesson-item-icon">🔍</div>
+      <div class="lesson-item-text">برامج مكافحة الفيروسات تفحص وتحذف الملفات الضارة</div>
+    </div>
+    <div class="lesson-item" style="animation-delay:.4s">
+      <div class="lesson-item-icon">🔑</div>
+      <div class="lesson-item-text">كلمة المرور القوية هي الخط الأول للدفاع عن حساباتك</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+    <button class="start-vr-btn" onclick="restartExperience()">العب مجدداً 🔄</button>
+    <button class="nav-btn" onclick="window.close()">إنهاء</button>
+  </div>
+</div>
+
+<!-- Main UI overlay -->
+<div id="ui-overlay" style="display:none;">
+  <div class="hud-top">
     <div>
-      <div class="logo-text">Cyber Room</div>
-      <div class="logo-sub" id="portal-sub-label">Admin Portal</div>
+      <div class="hud-title">🖥️ داخل الحاسوب</div>
+      <div class="hud-phase" id="hud-phase">المرحلة 1: الدخول</div>
+    </div>
+    <div class="hud-controls">
+      Mouse drag: look around<br>
+      WASD / Arrow keys: move<br>
+      Touch: swipe to look
     </div>
   </div>
 
-  <!-- Role Switcher -->
-  <div style="padding:10px 8px;border-bottom:1px solid var(--border);">
-    <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px;">
-      <button id="role-admin" onclick="switchRole('admin')" style="flex:1;padding:6px 4px;border:none;border-radius:6px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;background:var(--teal);color:white;transition:all .2s;">
-        🛡 Admin
-      </button>
-      <button id="role-dev" onclick="switchRole('dev')" style="flex:1;padding:6px 4px;border:none;border-radius:6px;font-size:11px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;background:none;color:var(--text2);transition:all .2s;">
-        ⚙️ Developer
-      </button>
+  <div class="alert-banner" id="alert-banner">⚠️ تحذير: تم اكتشاف برمجية خبيثة!</div>
+
+  <!-- Action prompt (shown at key moments) -->
+  <div class="action-prompt" id="action-prompt" style="display:none;"></div>
+
+  <div class="mobile-hint">اسحب للنظر حولك</div>
+
+  <div class="hud-bottom">
+    <div class="phase-bar" id="phase-bar"></div>
+    <div class="narrative-box">
+      <div class="narrative-phase-label" id="narrative-label">المرحلة الأولى</div>
+      <div class="narrative-text" id="narrative-text">مرحباً بك داخل الحاسوب...</div>
     </div>
-  </div>
-
-  <!-- ADMIN NAV -->
-  <div id="nav-admin">
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Overview</div>
-      <button class="nav-item active" onclick="nav('dashboard')">
-        <span class="nav-icon">📊</span> Dashboard
-      </button>
-      <button class="nav-item" onclick="nav('analytics')">
-        <span class="nav-icon">📈</span> Analytics
-      </button>
-      <button class="nav-item" onclick="nav('sessions')">
-        <span class="nav-icon">👥</span> Sessions
-        <span class="nav-badge">24</span>
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Content</div>
-      <button class="nav-item" onclick="nav('activities')">
-        <span class="nav-icon">🎮</span> Activities
-      </button>
-      <button class="nav-item" onclick="nav('questions')">
-        <span class="nav-icon">❓</span> Questions
-      </button>
-      <button class="nav-item" onclick="nav('stories')">
-        <span class="nav-icon">📖</span> Stories
-      </button>
-      <button class="nav-item" onclick="nav('media')">
-        <span class="nav-icon">🖼️</span> Media
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Configuration</div>
-      <button class="nav-item" onclick="nav('agegroups')">
-        <span class="nav-icon">👶</span> Age Groups
-      </button>
-      <button class="nav-item" onclick="nav('certificates')">
-        <span class="nav-icon">🏆</span> Certificates
-      </button>
-      <button class="nav-item" onclick="nav('users')">
-        <span class="nav-icon">👤</span> Staff Users
-      </button>
-      <button class="nav-item" onclick="nav('settings')">
-        <span class="nav-icon">⚙️</span> Settings
-      </button>
-    </div>
-  </div>
-
-  <!-- DEVELOPER NAV -->
-  <div id="nav-dev" style="display:none;">
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Build</div>
-      <button class="nav-item" onclick="nav('dev-templates')">
-        <span class="nav-icon">🧩</span> Game Templates
-        <span class="nav-badge" style="background:var(--purple);">6</span>
-      </button>
-      <button class="nav-item" onclick="nav('dev-builder')">
-        <span class="nav-icon">🔨</span> Template Builder
-      </button>
-      <button class="nav-item" onclick="nav('dev-api')">
-        <span class="nav-icon">🔌</span> API Explorer
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Code</div>
-      <button class="nav-item" onclick="nav('dev-components')">
-        <span class="nav-icon">📦</span> Components
-      </button>
-      <button class="nav-item" onclick="nav('dev-hooks')">
-        <span class="nav-icon">🪝</span> Game Hooks
-      </button>
-      <button class="nav-item" onclick="nav('dev-preview')">
-        <span class="nav-icon">👁</span> Live Preview
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Deploy</div>
-      <button class="nav-item" onclick="nav('dev-screens')">
-        <span class="nav-icon">🖥</span> Room Screens
-      </button>
-      <button class="nav-item" onclick="nav('dev-deploy')">
-        <span class="nav-icon">🚀</span> Deployment
-      </button>
-      <button class="nav-item" onclick="nav('dev-logs')">
-        <span class="nav-icon">📋</span> Logs
-        <span class="nav-badge" style="background:var(--red);">3</span>
-      </button>
-    </div>
-  </div>
-
-  <div class="sidebar-footer">
-    <div class="user-chip">
-      <div class="avatar" id="user-avatar" style="background:linear-gradient(135deg,var(--teal),#0f6e56);">T</div>
-      <div class="user-info">
-        <div class="user-name" id="user-name">Test</div>
-        <div class="user-role" id="user-role">Super Admin</div>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- ===== MAIN ===== -->
-<div class="main">
-
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <button class="hamburger" onclick="openSidebar()" aria-label="Open menu">☰</button>
-    <span id="topbar-title" class="topbar-title">Dashboard</span>
-    <span id="topbar-sub" class="topbar-sub"></span>
-    <div class="topbar-actions" id="topbar-actions"></div>
-  </div>
-
-  <!-- CONTENT -->
-  <div class="content">
-
-    <!-- ======= PAGE: DASHBOARD ======= -->
-    <div class="page active" id="page-dashboard">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Today's visitors</div>
-          <div class="stat-value" style="color:var(--teal)">147</div>
-          <div class="stat-delta up">↑ 12% vs yesterday</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg pre-score</div>
-          <div class="stat-value" style="color:var(--gold)">2.4<span style="font-size:14px;color:var(--text3)">/5</span></div>
-          <div class="stat-delta">Across all age groups</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg post-score</div>
-          <div class="stat-value" style="color:var(--teal)">4.6<span style="font-size:14px;color:var(--text3)">/5</span></div>
-          <div class="stat-delta up">↑ 91.6% improvement</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Certificates issued</div>
-          <div class="stat-value" style="color:var(--purple)">132</div>
-          <div class="stat-delta up">↑ 8 in last hour</div>
-        </div>
-      </div>
-
-      <div class="grid-2" style="margin-bottom:16px;">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Visitor activity — last 7 days</span>
-            <span class="card-sub">Total: 892</span>
-          </div>
-          <div class="card-body">
-            <div class="chart-bars" id="weekChart"></div>
-            <div style="display:flex;justify-content:space-between;margin-top:6px;">
-              <span style="font-size:10px;color:var(--text3)">Mon</span>
-              <span style="font-size:10px;color:var(--text3)">Tue</span>
-              <span style="font-size:10px;color:var(--text3)">Wed</span>
-              <span style="font-size:10px;color:var(--text3)">Thu</span>
-              <span style="font-size:10px;color:var(--text3)">Fri</span>
-              <span style="font-size:10px;color:var(--text3)">Sat</span>
-              <span style="font-size:10px;color:var(--text3)">Sun</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Score improvement by age group</span>
-          </div>
-          <div class="card-body">
-            <div style="margin-bottom:14px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:12px;">7–9 years</span>
-                <span style="font-size:12px;color:var(--teal)">+88%</span>
-              </div>
-              <div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:12px;">10–12 years</span>
-                <span style="font-size:12px;color:var(--teal)">+94%</span>
-              </div>
-              <div class="progress-bar"><div class="progress-fill" style="width:94%"></div></div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:12px;">13–17 years</span>
-                <span style="font-size:12px;color:var(--teal)">+97%</span>
-              </div>
-              <div class="progress-bar"><div class="progress-fill" style="width:97%"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Recent sessions</span>
-          <span class="card-sub">Today — 147 total</span>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Age group</th>
-                <th>Pre-score</th>
-                <th>Post-score</th>
-                <th>Improvement</th>
-                <th>Time</th>
-                <th>Certificate</th>
-              </tr>
-            </thead>
-            <tbody id="recentSessions"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: ACTIVITIES ======= -->
-    <div class="page" id="page-activities">
-      <div class="section-header">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" class="search-input" placeholder="Search activities...">
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <select class="form-select" style="width:140px;padding:7px 10px;">
-            <option>All age groups</option>
-            <option>7–9 years</option>
-            <option>10–12 years</option>
-            <option>13–17 years</option>
-          </select>
-          <button class="btn btn-primary" onclick="openModal('modal-activity')">＋ New activity</button>
-        </div>
-      </div>
-
-      <div class="activity-grid" id="activitiesGrid"></div>
-    </div>
-
-    <!-- ======= PAGE: QUESTIONS ======= -->
-    <div class="page" id="page-questions">
-      <div class="section-header">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" class="search-input" placeholder="Search questions...">
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <select class="form-select" style="width:160px;padding:7px 10px;">
-            <option>All activities</option>
-            <option>رحلة الاستكشاف الرقمي</option>
-            <option>مغامرة زيد الرقمية</option>
-            <option>محطة الرادار الرقمي</option>
-          </select>
-          <button class="btn btn-primary" onclick="openModal('modal-question')">＋ New question</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:40px;">#</th>
-                <th>Question text</th>
-                <th>Activity</th>
-                <th>Age group</th>
-                <th>Choices</th>
-                <th>Status</th>
-                <th style="width:100px;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="questionsTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: STORIES ======= -->
-    <div class="page" id="page-stories">
-      <div class="section-header">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" class="search-input" placeholder="Search story scenes...">
-        </div>
-        <div style="margin-left:auto;">
-          <button class="btn btn-primary" onclick="openModal('modal-story')">＋ New scene</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Scene</th>
-                <th>Character</th>
-                <th>Scenario text</th>
-                <th>Choices</th>
-                <th>Age group</th>
-                <th>Status</th>
-                <th style="width:100px;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="storiesTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: SESSIONS ======= -->
-    <div class="page" id="page-sessions">
-      <div class="section-header">
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" class="search-input" placeholder="Search by name...">
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <button class="btn btn-secondary">⬇ Export CSV</button>
-          <input type="date" class="form-input" style="width:150px;padding:6px 10px;">
-        </div>
-      </div>
-
-      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
-        <div class="stat-card">
-          <div class="stat-label">Total sessions today</div>
-          <div class="stat-value" style="color:var(--teal)">147</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Gold badges issued</div>
-          <div class="stat-value" style="color:var(--gold)">89</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Completion rate</div>
-          <div class="stat-value" style="color:var(--teal)">94%</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Visitor name</th>
-                <th>Age group</th>
-                <th>Pre</th>
-                <th>Post</th>
-                <th>Badge</th>
-                <th>Activities</th>
-                <th>Date & time</th>
-                <th>Certificate</th>
-              </tr>
-            </thead>
-            <tbody id="allSessionsTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: ANALYTICS ======= -->
-    <div class="page" id="page-analytics">
-      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
-        <div class="stat-card">
-          <div class="stat-label">Total visitors</div>
-          <div class="stat-value" style="color:var(--teal)">3,842</div>
-          <div class="stat-delta up">↑ 18% this month</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Most popular activity</div>
-          <div class="stat-value" style="font-size:14px;color:var(--text)">مغامرة زيد</div>
-          <div class="stat-delta">892 completions</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Avg session duration</div>
-          <div class="stat-value" style="color:var(--purple)">28<span style="font-size:14px">min</span></div>
-          <div class="stat-delta">Full room experience</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Questions answered</div>
-          <div class="stat-value" style="color:var(--gold)">19.2K</div>
-          <div class="stat-delta up">↑ Total all time</div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Activity completion rates</span></div>
-          <div class="card-body">
-            <div id="activityStats"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header"><span class="card-title">Most missed questions</span></div>
-          <div class="card-body">
-            <div id="missedQuestions"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: AGE GROUPS ======= -->
-    <div class="page" id="page-agegroups">
-      <div id="ageGroupsContent"></div>
-    </div>
-
-    <!-- ======= PAGE: CERTIFICATES ======= -->
-    <div class="page" id="page-certificates">
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Certificate templates</span></div>
-          <div class="card-body">
-            <div style="display:flex;flex-direction:column;gap:10px;" id="certTemplates"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Badge configuration</span></div>
-          <div class="card-body" id="badgeConfig"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: USERS ======= -->
-    <div class="page" id="page-users">
-      <div class="section-header">
-        <div style="margin-left:auto;">
-          <button class="btn btn-primary" onclick="openModal('modal-user')">＋ Add staff member</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Name</th><th>Email</th><th>Role</th><th>Last login</th><th>Status</th><th>Actions</th></tr>
-            </thead>
-            <tbody id="usersTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= PAGE: MEDIA ======= -->
-    <div class="page" id="page-media">
-      <div class="section-header">
-        <div style="margin-left:auto;">
-          <button class="btn btn-primary">⬆ Upload file</button>
-        </div>
-      </div>
-      <div class="grid-3" id="mediaGrid"></div>
-    </div>
-
-    <!-- ======= PAGE: SETTINGS ======= -->
-    <div class="page" id="page-settings">
-      <div class="grid-2">
-        <div>
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-header"><span class="card-title">Room configuration</span></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Room name (Arabic)</label>
-                <input type="text" class="form-input" value="غرفة الأمن السيبراني">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Organization name</label>
-                <input type="text" class="form-input" value="الوكالة الوطنية للأمن السيبراني">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Session timeout (minutes)</label>
-                <input type="number" class="form-input" value="45">
-              </div>
-              <button class="btn btn-primary">Save changes</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><span class="card-title">Feature toggles</span></div>
-            <div class="card-body" id="featureToggles"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-header"><span class="card-title">QR code settings</span></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">QR expiry (hours)</label>
-                <input type="number" class="form-input" value="8">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Encryption key</label>
-                <input type="password" class="form-input" value="cyber-room-secret-2024">
-              </div>
-              <div class="form-group">
-                <label class="form-label">QR size (px)</label>
-                <input type="number" class="form-input" value="200">
-              </div>
-              <button class="btn btn-primary">Save</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><span class="card-title">Printer settings</span></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Printer name</label>
-                <input type="text" class="form-input" value="CyberRoom-Printer-01">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Print format</label>
-                <select class="form-select">
-                  <option>Card (85×54mm)</option>
-                  <option>A5 certificate</option>
-                  <option>A4 certificate</option>
-                </select>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary">Test print</button>
-                <button class="btn btn-primary">Save</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: GAME TEMPLATES ======= -->
-    <div class="page" id="page-dev-templates">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Game Templates</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;">Build a template once — content team uses it forever with zero code</div>
-        </div>
-        <div style="margin-left:auto;">
-          <button class="btn btn-primary" onclick="nav('dev-builder')">＋ New template</button>
-        </div>
-      </div>
-      <div class="activity-grid" id="templatesGrid"></div>
-    </div>
-
-    <!-- ======= DEV: TEMPLATE BUILDER ======= -->
-    <div class="page" id="page-dev-builder">
-      <div class="grid-2" style="height:100%;align-items:start;">
-        <!-- Left: Builder form -->
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <div class="card">
-            <div class="card-header"><span class="card-title">🔨 Template builder</span><span class="card-sub">Define the game engine</span></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Template name<span style="color:var(--red)">*</span></label>
-                <input type="text" class="form-input" id="tpl-name" placeholder="e.g. Timed Decision Game">
-              </div>
-              <div class="grid-2">
-                <div class="form-group">
-                  <label class="form-label">Template type</label>
-                  <select class="form-select" id="tpl-type" onchange="updateTemplatePreview()">
-                    <option value="quiz">📋 Quiz / Q&A</option>
-                    <option value="story">📖 Story / Film</option>
-                    <option value="drag">🫧 Drag & Sort</option>
-                    <option value="timed">⏱ Timed Decision</option>
-                    <option value="scene">🏙 Tap-the-scene</option>
-                    <option value="simulation">🚨 Simulation</option>
-                    <option value="custom">✨ Custom</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Interaction</label>
-                  <select class="form-select" id="tpl-interaction">
-                    <option>Touch — single user</option>
-                    <option>Touch — multi user (table)</option>
-                    <option>Drag & drop</option>
-                    <option>Timer + touch</option>
-                    <option>Camera input</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Data schema — what fields does content need?</label>
-                <div id="schema-fields" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
-                <button class="btn btn-ghost" style="font-size:11px;" onclick="addSchemaField()">＋ Add field</button>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Game engine — HTML + JS skeleton</label>
-                <textarea class="form-textarea" id="tpl-code" style="font-family:'JetBrains Mono',monospace;font-size:11px;min-height:160px;color:#9FE1CB;" placeholder="// Your game engine code here&#10;// Use {{activity.questions}} to access content&#10;// Use {{activity.scenes}} for story content&#10;// Use cyberRoom.onAnswer(fn) to track scores"></textarea>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary" onclick="loadBoilerplate()">Load boilerplate</button>
-                <button class="btn btn-primary" onclick="saveTemplate()">Save template</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><span class="card-title">🪝 Game hooks (cyberRoom API)</span></div>
-            <div class="card-body" style="font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:var(--text2);">
-              <div><span style="color:#9FE1CB;">cyberRoom.getActivity()</span> <span style="color:var(--text3);">→ {name, questions, scenes, media}</span></div>
-              <div><span style="color:#9FE1CB;">cyberRoom.onAnswer(correct, idx)</span> <span style="color:var(--text3);">→ record answer</span></div>
-              <div><span style="color:#9FE1CB;">cyberRoom.nextScene()</span> <span style="color:var(--text3);">→ advance story</span></div>
-              <div><span style="color:#9FE1CB;">cyberRoom.finish(score)</span> <span style="color:var(--text3);">→ save + show result</span></div>
-              <div><span style="color:#9FE1CB;">cyberRoom.playSound(key)</span> <span style="color:var(--text3);">→ correct / wrong / win</span></div>
-              <div><span style="color:#9FE1CB;">cyberRoom.getMedia(key)</span> <span style="color:var(--text3);">→ image / audio URL</span></div>
-              <div><span style="color:#9FE1CB;">cyberRoom.t(key)</span> <span style="color:var(--text3);">→ translated string</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Live preview -->
-        <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:0;">
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">👁 Live preview</span>
-              <div style="display:flex;gap:4px;margin-left:auto;">
-                <button onclick="setBuilderDevice('desktop')" id="bpv-desktop" class="btn btn-primary" style="padding:3px 8px;font-size:11px;">🖥</button>
-                <button onclick="setBuilderDevice('tablet')" id="bpv-tablet" class="btn btn-secondary" style="padding:3px 8px;font-size:11px;">⬜</button>
-                <button onclick="setBuilderDevice('kiosk')" id="bpv-kiosk" class="btn btn-secondary" style="padding:3px 8px;font-size:11px;">📱</button>
-              </div>
-            </div>
-            <div style="padding:12px;background:var(--bg);border-radius:0 0 12px 12px;display:flex;align-items:center;justify-content:center;min-height:360px;">
-              <div id="builder-preview-box" style="width:100%;height:340px;border-radius:10px;overflow:hidden;border:1px solid var(--border);transition:all .3s;">
-                <iframe id="builder-preview-iframe" style="width:100%;height:100%;border:none;" srcdoc=""></iframe>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><span class="card-title">📋 Template checklist</span></div>
-            <div class="card-body" id="templateChecklist"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: API EXPLORER ======= -->
-    <div class="page" id="page-dev-api">
-      <div class="grid-2" style="align-items:start;">
-        <div>
-          <div class="card" style="margin-bottom:14px;">
-            <div class="card-header"><span class="card-title">🔌 API endpoints</span><span class="card-sub">Base URL: /api/v1</span></div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th></tr></thead>
-                <tbody id="apiEndpointsTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="card" style="margin-bottom:14px;">
-            <div class="card-header"><span class="card-title">🧪 Try it — API tester</span></div>
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Endpoint</label>
-                <div style="display:flex;gap:6px;">
-                  <select class="form-select" style="width:80px;padding:7px 8px;" id="api-method">
-                    <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
-                  </select>
-                  <input type="text" class="form-input" id="api-url" value="/api/v1/activities" placeholder="/api/v1/...">
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Request body (JSON)</label>
-                <textarea class="form-textarea" id="api-body" style="font-family:'JetBrains Mono',monospace;font-size:11px;min-height:80px;color:#9FE1CB;" placeholder='{"age_group": "7-9"}'></textarea>
-              </div>
-              <button class="btn btn-primary" onclick="runApiTest()">▶ Send request</button>
-              <div id="api-response" style="margin-top:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#9FE1CB;min-height:80px;white-space:pre-wrap;display:none;"></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">🔑 Auth tokens</span></div>
-            <div class="card-body">
-              <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Use JWT bearer tokens in the Authorization header</div>
-              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#9FE1CB;word-break:break-all;">Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</div>
-              <button class="btn btn-secondary" style="margin-top:10px;font-size:11px;">Generate test token</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: COMPONENTS ======= -->
-    <div class="page" id="page-dev-components">
-      <div class="section-header">
-        <div class="section-title">UI Component library</div>
-        <div style="margin-left:auto;"><button class="btn btn-secondary" style="font-size:11px;">📋 Copy all imports</button></div>
-      </div>
-      <div class="activity-grid" id="componentsGrid"></div>
-    </div>
-
-    <!-- ======= DEV: GAME HOOKS ======= -->
-    <div class="page" id="page-dev-hooks">
-      <div class="grid-2" style="align-items:start;">
-        <div class="card">
-          <div class="card-header"><span class="card-title">🪝 cyberRoom SDK reference</span></div>
-          <div class="card-body" id="hooksReference"></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">📄 Code example — Quiz template</span></div>
-          <div class="card-body">
-            <pre style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9FE1CB;overflow-x:auto;line-height:1.7;"><code id="hooksCodeExample"></code></pre>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: ROOM SCREENS ======= -->
-    <div class="page" id="page-dev-screens">
-      <div class="section-header">
-        <div class="section-title">Room screen registry</div>
-        <div style="margin-left:auto;"><button class="btn btn-primary">＋ Register screen</button></div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Screen ID</th><th>Location</th><th>Type</th><th>Resolution</th><th>Current activity</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="screensTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: DEPLOYMENT ======= -->
-    <div class="page" id="page-dev-deploy">
-      <div class="grid-2" style="align-items:start;">
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <div class="card">
-            <div class="card-header"><span class="card-title">🚀 Deploy to room server</span></div>
-            <div class="card-body">
-              <div style="display:flex;flex-direction:column;gap:8px;" id="deploySteps"></div>
-              <div style="margin-top:14px;display:flex;gap:8px;">
-                <button class="btn btn-secondary" onclick="runDeploy('pull')">⬇ Pull latest</button>
-                <button class="btn btn-primary" onclick="runDeploy('deploy')">🚀 Deploy now</button>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">🌿 Git branches</span></div>
-            <div class="card-body" id="gitBranches"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">📜 Deploy log</span><button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:3px 8px;" onclick="clearLog()">Clear</button></div>
-          <div id="deploy-log" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:12px;min-height:300px;color:var(--text2);line-height:1.8;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: LOGS ======= -->
-    <div class="page" id="page-dev-logs">
-      <div class="section-header">
-        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" placeholder="Filter logs..."></div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <select class="form-select" style="width:120px;padding:7px 10px;">
-            <option>All levels</option><option>Error</option><option>Warning</option><option>Info</option>
-          </select>
-          <button class="btn btn-secondary" style="font-size:11px;">⬇ Export</button>
-        </div>
-      </div>
-      <div class="card">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:12px;line-height:2;" id="logsContent"></div>
-      </div>
-    </div>
-
-    <!-- ======= DEV: LIVE PREVIEW ======= -->
-    <div class="page" id="page-dev-preview">
-      <div class="section-header">
-        <select class="form-select" style="width:280px;padding:7px 10px;" id="preview-activity-select" onchange="loadDevPreview()">
-          <option>— Select an activity to preview —</option>
-        </select>
-        <div style="margin-left:auto;display:flex;gap:6px;">
-          <button onclick="setDevPreviewDevice('desktop')" class="btn btn-primary" id="dpv-desktop" style="font-size:11px;">🖥 Full</button>
-          <button onclick="setDevPreviewDevice('tablet')" class="btn btn-secondary" id="dpv-tablet" style="font-size:11px;">⬜ Tablet</button>
-          <button onclick="setDevPreviewDevice('kiosk')" class="btn btn-secondary" id="dpv-kiosk" style="font-size:11px;">📱 Kiosk</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:center;height:calc(100vh - 200px);background:var(--bg);border-radius:12px;border:1px solid var(--border);">
-        <div id="dev-preview-box" style="width:100%;height:100%;border-radius:10px;overflow:hidden;transition:all .3s;">
-          <iframe id="dev-preview-iframe" style="width:100%;height:100%;border:none;" srcdoc="<div style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#555;'>Select an activity above to preview it</div>"></iframe>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- end content -->
-</div><!-- end main -->
-
-<!-- ===== BOTTOM NAV (mobile only) ===== -->
-<nav class="bottom-nav" id="bottom-nav">
-  <button class="bottom-nav-item active" onclick="bottomNav('dashboard', this)" id="bn-dashboard">
-    <span class="bn-icon">📊</span>
-    <span>Dashboard</span>
-  </button>
-  <button class="bottom-nav-item" onclick="bottomNav('activities', this)" id="bn-activities">
-    <span class="bn-icon">🎮</span>
-    <span>Activities</span>
-  </button>
-  <button class="bottom-nav-item" onclick="bottomNav('questions', this)" id="bn-questions">
-    <span class="bn-icon">❓</span>
-    <span>Questions</span>
-  </button>
-  <button class="bottom-nav-item" onclick="bottomNav('sessions', this)" id="bn-sessions">
-    <span class="bn-icon">👥</span>
-    <span>Sessions</span>
-  </button>
-  <button class="bottom-nav-item" onclick="openSidebar()" id="bn-more">
-    <span class="bn-icon">⋯</span>
-    <span>More</span>
-  </button>
-</nav>
-
-<!-- ===== MODALS ===== -->
-
-<!-- New Activity Modal -->
-<div class="modal-overlay" id="modal-activity">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title">＋ Create new activity</span>
-      <button class="modal-close" onclick="closeModal('modal-activity')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Activity name (Arabic)<span>*</span></label>
-          <input type="text" class="form-input" placeholder="e.g. مغامرة زيد الرقمية">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Activity type<span>*</span></label>
-          <select class="form-select">
-            <option>Quiz</option>
-            <option>Story / Interactive film</option>
-            <option>Drag & sort game</option>
-            <option>Touch table game</option>
-            <option>VR experience</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Age group<span>*</span></label>
-          <select class="form-select">
-            <option>7–9 years</option>
-            <option>10–12 years</option>
-            <option>13–17 years</option>
-            <option>All ages</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Zone / Screen</label>
-          <select class="form-select">
-            <option>Testing & analysis zone</option>
-            <option>Children & early activities</option>
-            <option>Touch interaction table</option>
-            <option>Cinema & display zone</option>
-            <option>VR / AR zone</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description</label>
-        <textarea class="form-textarea" placeholder="Brief description of this activity..."></textarea>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Activity icon (emoji)</label>
-          <input type="text" class="form-input" placeholder="🎮" style="font-size:20px;text-align:center;">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select class="form-select">
-            <option>Draft</option>
-            <option>Published</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-activity')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveActivity()">Create activity</button>
+    <div class="nav-buttons">
+      <button class="nav-btn" id="btn-prev" onclick="prevPhase()" disabled>◀ السابق</button>
+      <button class="nav-btn primary" id="btn-next" onclick="nextPhase()">التالي ▶</button>
     </div>
   </div>
 </div>
 
-<!-- New Question Modal -->
-<div class="modal-overlay" id="modal-question">
-  <div class="modal" style="max-width:680px;">
-    <div class="modal-header">
-      <span class="modal-title">＋ Create new question</span>
-      <button class="modal-close" onclick="closeModal('modal-question')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Activity<span>*</span></label>
-          <select class="form-select">
-            <option>رحلة الاستكشاف الرقمي — 7–9</option>
-            <option>رحلة الاستكشاف الرقمي — 10–12</option>
-            <option>محطة الرادار الرقمي</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Scene emoji</label>
-          <input type="text" class="form-input" placeholder="📱💬" style="font-size:20px;text-align:center;">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Question text (Arabic)<span>*</span></label>
-        <textarea class="form-textarea" placeholder="e.g. وصلتك رسالة من شخص غريب يقول: أرسل لي عنوان منزلك لتصلك هدية..." style="direction:rtl;"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Answer choices <span style="color:var(--text3);font-weight:400;">(click circle to mark correct)</span></label>
-        <div id="choicesList">
-          <div class="choice-item">
-            <button class="choice-correct selected" onclick="toggleCorrect(this)"></button>
-            <input class="form-input" style="background:none;border:none;padding:0;" placeholder="Choice text (Arabic)..." value="أحذف الرسالة فوراً ولا أرد">
-            <input type="text" class="choice-emoji" value="🗑️">
-            <button class="choice-remove" onclick="removeChoice(this)">✕</button>
-          </div>
-          <div class="choice-item">
-            <button class="choice-correct" onclick="toggleCorrect(this)"></button>
-            <input class="form-input" style="background:none;border:none;padding:0;" placeholder="Choice text (Arabic)..." value="أكتب العنوان وأرسله">
-            <input type="text" class="choice-emoji" value="🏠">
-            <button class="choice-remove" onclick="removeChoice(this)">✕</button>
-          </div>
-        </div>
-        <button class="btn btn-ghost" style="margin-top:6px;" onclick="addChoice()">＋ Add choice</button>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Correct answer feedback</label>
-          <textarea class="form-textarea" placeholder="Feedback shown when correct..." style="direction:rtl;min-height:60px;">ممتاز! لا نرسل عنواننا أبداً لشخص لا نعرفه</textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Wrong answer feedback</label>
-          <textarea class="form-textarea" placeholder="Feedback shown when wrong..." style="direction:rtl;min-height:60px;">تمهّل! الغرباء على الإنترنت قد يكونون خطرين</textarea>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-question')">Cancel</button>
-      <button class="btn btn-primary">Save question</button>
-    </div>
-  </div>
-</div>
-
-<!-- New Story Scene Modal -->
-<div class="modal-overlay" id="modal-story">
-  <div class="modal" style="max-width:680px;">
-    <div class="modal-header">
-      <span class="modal-title">＋ Create story scene</span>
-      <button class="modal-close" onclick="closeModal('modal-story')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Story / Activity<span>*</span></label>
-          <select class="form-select">
-            <option>مغامرة زيد الرقمية</option>
-            <option>بث مباشر</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Scene order</label>
-          <input type="number" class="form-input" value="1" min="1">
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Scene emoji 1</label>
-          <input type="text" class="form-input" placeholder="🧒" style="font-size:24px;text-align:center;">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Scene emoji 2</label>
-          <input type="text" class="form-input" placeholder="📱" style="font-size:24px;text-align:center;">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Scene label</label>
-        <input type="text" class="form-input" placeholder="e.g. زيد يتصفح هاتفه" style="direction:rtl;">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Scene narrative text (Arabic)<span>*</span></label>
-        <textarea class="form-textarea" style="direction:rtl;min-height:90px;" placeholder="Describe what happens in this scene..."></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Question asked to child</label>
-        <input type="text" class="form-input" placeholder="e.g. ماذا يجب أن يفعل زيد؟" style="direction:rtl;">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Answer choices</label>
-        <div id="storyChoicesList">
-          <div class="choice-item">
-            <button class="choice-correct selected" onclick="toggleCorrect(this)"></button>
-            <input class="form-input" style="background:none;border:none;padding:0;direction:rtl;" placeholder="Choice text...">
-            <button class="choice-remove" onclick="removeChoice(this)">✕</button>
-          </div>
-          <div class="choice-item">
-            <button class="choice-correct" onclick="toggleCorrect(this)"></button>
-            <input class="form-input" style="background:none;border:none;padding:0;direction:rtl;" placeholder="Choice text...">
-            <button class="choice-remove" onclick="removeChoice(this)">✕</button>
-          </div>
-        </div>
-        <button class="btn btn-ghost" style="margin-top:6px;" onclick="addStoryChoice()">＋ Add choice</button>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Lesson title</label>
-          <input type="text" class="form-input" placeholder="e.g. 🎯 درس مهم" style="direction:rtl;">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Lesson explanation</label>
-          <textarea class="form-textarea" style="direction:rtl;min-height:60px;" placeholder="Explanation shown after answering..."></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-story')">Cancel</button>
-      <button class="btn btn-primary">Save scene</button>
-    </div>
-  </div>
-</div>
-
-<!-- New Staff User Modal -->
-<div class="modal-overlay" id="modal-user">
-  <div class="modal" style="max-width:440px;">
-    <div class="modal-header">
-      <span class="modal-title">＋ Add staff member</span>
-      <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Full name<span>*</span></label>
-        <input type="text" class="form-input" placeholder="Ahmed Al-Rashidi">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email<span>*</span></label>
-        <input type="email" class="form-input" placeholder="ahmed@ncsa.gov.qa">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Role<span>*</span></label>
-        <select class="form-select">
-          <option>Room guide (read only)</option>
-          <option>Content editor</option>
-          <option>Admin</option>
-          <option>Super admin</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Temporary password</label>
-        <input type="text" class="form-input" value="CyberRoom2024!" style="font-family:'JetBrains Mono',monospace;">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-user')">Cancel</button>
-      <button class="btn btn-primary">Create account</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== PREVIEW MODAL ===== -->
-<div class="modal-overlay" id="modal-preview" style="padding:0;">
-  <div style="width:100%;max-width:960px;height:92vh;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;overflow:hidden;margin:auto;">
-    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;">
-      <span style="font-size:18px;" id="preview-icon">🎮</span>
-      <div>
-        <div id="preview-modal-title" style="font-size:14px;font-weight:600;direction:rtl;"></div>
-        <div id="preview-modal-sub" style="font-size:11px;color:var(--text3);"></div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-        <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-          <button onclick="setPreviewDevice('full')" id="btn-full" style="padding:5px 10px;font-size:11px;font-family:Inter,sans-serif;cursor:pointer;border:none;background:var(--teal);color:white;">🖥 Full</button>
-          <button onclick="setPreviewDevice('tablet')" id="btn-tablet" style="padding:5px 10px;font-size:11px;font-family:Inter,sans-serif;cursor:pointer;border:none;background:var(--bg3);color:var(--text2);">⬜ Tablet</button>
-          <button onclick="setPreviewDevice('kiosk')" id="btn-kiosk" style="padding:5px 10px;font-size:11px;font-family:Inter,sans-serif;cursor:pointer;border:none;background:var(--bg3);color:var(--text2);">📱 Kiosk</button>
-        </div>
-        <span id="preview-status" class="badge badge-green"></span>
-        <button class="btn btn-secondary" style="font-size:11px;" onclick="reloadPreview()">↺ Reload</button>
-        <button class="btn btn-primary" style="font-size:11px;" onclick="editFromPreview()">✏️ Edit</button>
-        <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:2px 6px;border-radius:4px;" onclick="closeModal('modal-preview')">✕</button>
-      </div>
-    </div>
-    <div id="preview-wrap" style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:16px;overflow:auto;transition:all 0.3s;">
-      <div id="preview-box" style="width:100%;height:100%;border-radius:10px;overflow:hidden;border:2px solid var(--border);box-shadow:0 0 40px rgba(0,0,0,0.4);transition:all 0.3s;">
-        <iframe id="preview-iframe" style="width:100%;height:100%;border:none;background:#0d1117;"></iframe>
-      </div>
-    </div>
-    <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-shrink:0;">
-      <span style="font-size:11px;color:var(--text3);">👁 Live preview — exactly what visitors see on the room screen</span>
-      <div style="margin-left:auto;display:flex;gap:8px;">
-        <button class="btn btn-ghost" style="font-size:11px;" onclick="publishActivity()">🚀 Publish activity</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-// ===== NAV =====
-const pageTitles = {
-  dashboard: ['Dashboard', 'Overview of today\'s activity'],
-  analytics: ['Analytics', 'Detailed statistics and reports'],
-  sessions: ['Sessions', 'All visitor sessions'],
-  activities: ['Activities', 'Manage interactive screens'],
-  questions: ['Questions', 'Quiz & assessment questions'],
-  stories: ['Stories', 'Interactive story scenes'],
-  media: ['Media library', 'Images, audio and assets'],
-  agegroups: ['Age groups', 'Configure groups and content'],
-  certificates: ['Certificates', 'Badge and certificate design'],
-  users: ['Staff users', 'Admin access management'],
-  settings: ['Settings', 'Room and system configuration'],
-  'dev-templates': ['Game Templates', 'Build engines — content team uses forever'],
-  'dev-builder': ['Template Builder', 'Write the game engine code'],
-  'dev-api': ['API Explorer', 'All endpoints + live tester'],
-  'dev-components': ['Components', 'Reusable UI library'],
-  'dev-hooks': ['Game Hooks', 'cyberRoom SDK reference'],
-  'dev-preview': ['Live Preview', 'Test any activity on any device'],
-  'dev-screens': ['Room Screens', 'Physical screen registry'],
-  'dev-deploy': ['Deployment', 'Deploy to room server'],
-  'dev-logs': ['Logs', 'Errors, warnings, info'],
-};
-
-const topbarActions = {
-  activities: `<button class="btn btn-primary" onclick="openModal('modal-activity')">＋ New activity</button>`,
-  questions: `<button class="btn btn-primary" onclick="openModal('modal-question')">＋ New question</button>`,
-  stories: `<button class="btn btn-primary" onclick="openModal('modal-story')">＋ New scene</button>`,
-  users: `<button class="btn btn-primary" onclick="openModal('modal-user')">＋ Add staff</button>`,
-  sessions: `<button class="btn btn-secondary">⬇ Export CSV</button>`,
-  analytics: `<button class="btn btn-secondary">⬇ Download report</button>`,
-};
-
-function nav(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const pageEl = document.getElementById('page-' + page);
-  if (pageEl) pageEl.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.getAttribute('onclick') === `nav('${page}')`) n.classList.add('active');
-  });
-  const [title, sub] = pageTitles[page] || [page, ''];
-  document.getElementById('topbar-title').textContent = title;
-  document.getElementById('topbar-sub').textContent = sub ? '/ ' + sub : '';
-  document.getElementById('topbar-actions').innerHTML = topbarActions[page] || '';
-  // close sidebar on mobile after navigation
-  if (window.innerWidth <= 768) closeSidebar();
-  // trigger dev page renders on demand
-  if (typeof _devRenders !== 'undefined' && _devRenders[page]) _devRenders[page]();
-}
-
-// ===== MODAL =====
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
-
-// ===== CHOICES =====
-function addChoice() {
-  const list = document.getElementById('choicesList');
-  const div = document.createElement('div');
-  div.className = 'choice-item';
-  div.innerHTML = `
-    <button class="choice-correct" onclick="toggleCorrect(this)"></button>
-    <input class="form-input" style="background:none;border:none;padding:0;" placeholder="Choice text (Arabic)...">
-    <input type="text" class="choice-emoji" value="❓">
-    <button class="choice-remove" onclick="removeChoice(this)">✕</button>`;
-  list.appendChild(div);
-}
-
-function addStoryChoice() {
-  const list = document.getElementById('storyChoicesList');
-  const div = document.createElement('div');
-  div.className = 'choice-item';
-  div.innerHTML = `
-    <button class="choice-correct" onclick="toggleCorrect(this)"></button>
-    <input class="form-input" style="background:none;border:none;padding:0;direction:rtl;" placeholder="Choice text...">
-    <button class="choice-remove" onclick="removeChoice(this)">✕</button>`;
-  list.appendChild(div);
-}
-
-function toggleCorrect(btn) {
-  const list = btn.closest('#choicesList, #storyChoicesList');
-  if (list) list.querySelectorAll('.choice-correct').forEach(b => b.classList.remove('selected'));
-  btn.classList.toggle('selected');
-}
-
-function removeChoice(btn) {
-  btn.closest('.choice-item').remove();
-}
-
-// ===== DATA =====
-const sessions = [
-  { name: 'سارة محمد', age: '7–9', pre: 2, post: 5, time: '10:32 AM', badge: 'gold' },
-  { name: 'خالد عبدالله', age: '10–12', pre: 3, post: 5, time: '10:18 AM', badge: 'gold' },
-  { name: 'ريم الشمري', age: '13–17', pre: 1, post: 4, time: '10:05 AM', badge: 'silver' },
-  { name: 'أحمد فاروق', age: '7–9', pre: 2, post: 4, time: '09:52 AM', badge: 'silver' },
-  { name: 'نورة القحطاني', age: '10–12', pre: 4, post: 5, time: '09:41 AM', badge: 'gold' },
-  { name: 'ماجد العتيبي', age: '13–17', pre: 2, post: 5, time: '09:28 AM', badge: 'gold' },
-  { name: 'فاطمة الزهراني', age: '7–9', pre: 1, post: 3, time: '09:15 AM', badge: 'bronze' },
-];
-
-const activities = [
-  { name: 'رحلة الاستكشاف الرقمي', type: 'Quiz', age: '7–9', icon: '🔍', status: 'published', questions: 5 },
-  { name: 'مرآة الأمان', type: 'Interactive', age: '7–9', icon: '🪞', status: 'published', questions: 5 },
-  { name: 'نهر الفقاعات', type: 'Drag game', age: '7–9', icon: '🫧', status: 'published', questions: 0 },
-  { name: 'مغامرة زيد الرقمية', type: 'Story', age: '7–9', icon: '🎬', status: 'published', questions: 5 },
-  { name: 'طبّاخ المعلومات', type: 'Drag game', age: '7–9', icon: '🍳', status: 'published', questions: 0 },
-  { name: 'محطة الرادار الرقمي', type: 'Quiz', age: '10–12', icon: '📡', status: 'published', questions: 5 },
-  { name: 'شبكتي', type: 'Drag game', age: '10–12', icon: '🕸️', status: 'published', questions: 0 },
-  { name: 'مهمة: أنقذ الملف', type: 'Mission game', age: '10–12', icon: '🛡️', status: 'draft', questions: 0 },
-  { name: 'بث مباشر', type: 'Story', age: '10–12', icon: '📺', status: 'published', questions: 3 },
-  { name: 'مختبر الهندسة الاجتماعية', type: 'Analysis', age: '13–17', icon: '🔬', status: 'published', questions: 4 },
-  { name: 'مركز إدارة الأزمات', type: 'Simulation', age: '13–17', icon: '🚨', status: 'draft', questions: 0 },
-  { name: 'خريطة التهديدات', type: 'Map', age: 'All', icon: '🗺️', status: 'published', questions: 0 },
-];
-
-const questions = [
-  { id: 1, text: 'وصلتك رسالة من شخص غريب يقول: أرسل لي عنوان منزلك...', activity: 'رحلة الاستكشاف الرقمي', age: '7–9', choices: 2, status: 'published' },
-  { id: 2, text: 'أثناء استخدامك الحاسوب ظهرت نافذة: اضغط هنا لتربح جائزة!', activity: 'رحلة الاستكشاف الرقمي', age: '7–9', choices: 2, status: 'published' },
-  { id: 3, text: 'طلبت منك لعبة إلكترونية صورة البطاقة البنكية لعائلتك...', activity: 'رحلة الاستكشاف الرقمي', age: '7–9', choices: 2, status: 'published' },
-  { id: 4, text: 'صديق في لعبتك يطلب منك كلمة مرورك الخاصة لمساعدتك...', activity: 'رحلة الاستكشاف الرقمي', age: '7–9', choices: 2, status: 'published' },
-  { id: 5, text: 'استقبال رسالة نصية تبدو من المصرف تطلب الضغط على رابط...', activity: 'محطة الرادار الرقمي', age: '10–12', choices: 2, status: 'published' },
-  { id: 6, text: 'مستخدم ينشئ كلمة مرور جديدة عبارة عن رموز وأرقام وحروف...', activity: 'محطة الرادار الرقمي', age: '10–12', choices: 2, status: 'published' },
-];
-
-const storyScenes = [
-  { scene: '📱➡️', char: 'زيد', text: 'يلعب زيد على هاتفه ويتلقى إشعاراً: مبروك لقد ربحت جائزة...', choices: 3, age: '7–9', status: 'published' },
-  { scene: '🎮👤', char: 'زيد', text: 'يظهر في لعبة زيد طلب صداقة من شخص غريب AlMajhoul99...', choices: 2, age: '7–9', status: 'published' },
-  { scene: '🧒💻', char: 'زيد', text: 'يريد زيد التسجيل في موقع ألعاب ويطلب منه رقم هاتف والده...', choices: 2, age: '7–9', status: 'published' },
-  { scene: '📡⚠️', char: 'المدوّن', text: 'رسالة خاصة من @زائر_غامض: أرسل لي عنوان منزلك لتصلك هدية...', choices: 2, age: '10–12', status: 'published' },
-];
-
-const users = [
-  { name: 'Ahmed Al-Mansoori', email: 'ahmed@ncsa.gov.qa', role: 'Super admin', last: '5 min ago', status: 'active' },
-  { name: 'Fatima Al-Rashidi', email: 'fatima@ncsa.gov.qa', role: 'Content editor', last: '2 hours ago', status: 'active' },
-  { name: 'Khalid Hamdan', email: 'khalid@ncsa.gov.qa', role: 'Room guide', last: 'Yesterday', status: 'active' },
-  { name: 'Noura Saleh', email: 'noura@ncsa.gov.qa', role: 'Admin', last: '3 days ago', status: 'inactive' },
-];
-
-// ===== RENDER FUNCTIONS =====
-function renderSessions(tbody, data) {
-  tbody.innerHTML = data.map(s => {
-    const imp = Math.round((s.post - s.pre) / 5 * 100);
-    const badgeClass = s.badge === 'gold' ? 'badge-gold' : s.badge === 'silver' ? 'badge-gray' : 'badge-red';
-    const badgeLabel = s.badge === 'gold' ? '⭐ Gold' : s.badge === 'silver' ? '🥈 Silver' : '🥉 Bronze';
-    return `<tr>
-      <td style="font-weight:500;">${s.name}</td>
-      <td><span class="badge badge-blue">${s.age}</span></td>
-      <td>${s.pre}/5</td>
-      <td style="color:var(--teal);font-weight:500;">${s.post}/5</td>
-      <td><span style="color:var(--teal);">+${imp}%</span></td>
-      <td style="color:var(--text3);">${s.time}</td>
-      <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderActivities() {
-  const grid = document.getElementById('activitiesGrid');
-  const bgColors = ['rgba(29,158,117,0.1)','rgba(56,139,253,0.1)','rgba(163,113,247,0.1)','rgba(210,153,34,0.1)','rgba(248,81,73,0.1)'];
-  grid.innerHTML = activities.map((a, i) => `
-    <div class="activity-card">
-      <div class="activity-card-top" style="background:${bgColors[i%5]}">
-        <span style="font-size:40px;">${a.icon}</span>
-        ${a.status === 'draft' ? '<span class="badge badge-gold" style="position:absolute;top:8px;right:8px;">Draft</span>' : ''}
-      </div>
-      <div class="activity-card-body">
-        <div class="activity-card-title" style="direction:rtl;">${a.name}</div>
-        <div class="activity-card-sub">${a.type} · ${a.age}</div>
-        ${a.questions > 0 ? `<div style="font-size:11px;color:var(--text3);">${a.questions} questions</div>` : ''}
-        <div class="activity-card-footer">
-          <div class="activity-status-dot" style="background:${a.status === 'published' ? 'var(--teal)' : 'var(--gold)'}"></div>
-          <span style="font-size:11px;color:var(--text3);">${a.status}</span>
-          <div style="margin-left:auto;display:flex;gap:6px;">
-            <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="editActivity(${i})">Edit</button>
-            <button class="btn btn-primary" style="padding:4px 8px;font-size:11px;" onclick="previewActivity(${i})">▶ Preview</button>
-          </div>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-function renderQuestions() {
-  document.getElementById('questionsTable').innerHTML = questions.map(q => `
-    <tr>
-      <td style="color:var(--text3);">${q.id}</td>
-      <td style="max-width:280px;direction:rtl;">
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${q.text}</div>
-      </td>
-      <td style="direction:rtl;font-size:11px;">${q.activity}</td>
-      <td><span class="badge badge-blue">${q.age}</span></td>
-      <td>${q.choices} choices</td>
-      <td><span class="badge badge-green">${q.status}</span></td>
-      <td>
-        <div style="display:flex;gap:4px;">
-          <button class="btn btn-ghost" style="padding:3px 8px;" onclick="openModal('modal-question')">Edit</button>
-          <button class="btn btn-danger" style="padding:3px 8px;">Del</button>
-        </div>
-      </td>
-    </tr>`).join('');
-}
-
-function renderStories() {
-  document.getElementById('storiesTable').innerHTML = storyScenes.map(s => `
-    <tr>
-      <td style="font-size:22px;">${s.scene}</td>
-      <td style="font-weight:500;">${s.char}</td>
-      <td style="max-width:260px;direction:rtl;">
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;">${s.text}</div>
-      </td>
-      <td>${s.choices} choices</td>
-      <td><span class="badge badge-blue">${s.age}</span></td>
-      <td><span class="badge badge-green">${s.status}</span></td>
-      <td>
-        <div style="display:flex;gap:4px;">
-          <button class="btn btn-ghost" style="padding:3px 8px;" onclick="openModal('modal-story')">Edit</button>
-          <button class="btn btn-danger" style="padding:3px 8px;">Del</button>
-        </div>
-      </td>
-    </tr>`).join('');
-}
-
-function renderUsers() {
-  document.getElementById('usersTable').innerHTML = users.map(u => `
-    <tr>
-      <td style="font-weight:500;">${u.name}</td>
-      <td style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:11px;">${u.email}</td>
-      <td><span class="badge ${u.role === 'Super admin' ? 'badge-purple' : u.role === 'Admin' ? 'badge-blue' : u.role === 'Content editor' ? 'badge-gold' : 'badge-gray'}">${u.role}</span></td>
-      <td style="color:var(--text3);">${u.last}</td>
-      <td><span class="badge ${u.status === 'active' ? 'badge-green' : 'badge-gray'}">${u.status}</span></td>
-      <td>
-        <div style="display:flex;gap:4px;">
-          <button class="btn btn-ghost" style="padding:3px 8px;">Edit</button>
-          <button class="btn btn-danger" style="padding:3px 8px;">Remove</button>
-        </div>
-      </td>
-    </tr>`).join('');
-}
-
-function renderChart() {
-  const vals = [78, 112, 95, 134, 147, 88, 43];
-  const max = Math.max(...vals);
-  document.getElementById('weekChart').innerHTML = vals.map(v =>
-    `<div class="chart-bar" style="height:${Math.round(v/max*46)}px" title="${v} visitors"></div>`
-  ).join('');
-}
-
-function renderAgeGroups() {
-  const groups = [
-    { label: '7–9 years', ar: 'الفئة العمرية الأولى', color: 'var(--teal)', activities: ['رحلة الاستكشاف الرقمي', 'مرآة الأمان', 'نهر الفقاعات', 'مغامرة زيد الرقمية', 'طبّاخ المعلومات', 'المدينة الآمنة', 'قلعة الأمان', 'المستشفى السيبراني'], visitors: 612 },
-    { label: '10–12 years', ar: 'الفئة العمرية الثانية', color: 'var(--blue)', activities: ['رحلة الاستكشاف الرقمي', 'محطة الرادار الرقمي', 'شبكتي', 'مهمة: أنقذ الملف', 'المحكمة السيبرانية', 'بث مباشر', 'مختبر التحليل الرقمي'], visitors: 483 },
-    { label: '13–17 years', ar: 'الفئة العمرية الثالثة', color: 'var(--purple)', activities: ['رحلة الاستكشاف الرقمي', 'مركز إدارة الأزمات', 'مختبر الهندسة الاجتماعية', 'المحكمة السيبرانية', 'غرفة العمليات السيبرانية', 'مختبر التحليل الرقمي', 'رحلة داخل الحاسوب'], visitors: 347 },
-  ];
-  document.getElementById('ageGroupsContent').innerHTML = `<div class="grid-3">` + groups.map(g => `
-    <div class="card">
-      <div class="card-header" style="border-left:3px solid ${g.color};">
-        <div>
-          <div class="card-title">${g.label}</div>
-          <div style="font-size:11px;color:var(--text3);direction:rtl;">${g.ar}</div>
-        </div>
-        <span class="badge badge-green" style="margin-left:auto;">${g.visitors} visitors</span>
-      </div>
-      <div class="card-body">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Assigned activities</div>
-        ${g.activities.map(a => `
-          <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border2);direction:rtl;">
-            <div class="notif-dot" style="background:${g.color}"></div>
-            <span style="font-size:12px;">${a}</span>
-          </div>`).join('')}
-        <button class="btn btn-ghost" style="margin-top:10px;width:100%;">＋ Assign activity</button>
-      </div>
-    </div>`).join('') + `</div>`;
-}
-
-function renderCertificates() {
-  const templates = [
-    { name: 'Gold certificate', badge: '⭐', minScore: 4, color: 'var(--gold)', active: true },
-    { name: 'Silver certificate', badge: '🥈', minScore: 3, color: '#8b949e', active: true },
-    { name: 'Bronze certificate', badge: '🥉', minScore: 1, color: '#cd7f32', active: true },
-  ];
-  document.getElementById('certTemplates').innerHTML = templates.map(t => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
-      <span style="font-size:28px;">${t.badge}</span>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:500;">${t.name}</div>
-        <div style="font-size:11px;color:var(--text3);">Min score: ${t.minScore}/5</div>
-      </div>
-      <button class="toggle on"></button>
-    </div>`).join('');
-
-  document.getElementById('badgeConfig').innerHTML = `
-    <div class="form-group">
-      <label class="form-label">Certificate title text</label>
-      <input type="text" class="form-input" value="أنت الآن بطل الأمن السيبراني!" style="direction:rtl;">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Organization logo URL</label>
-      <input type="text" class="form-input" placeholder="https://...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Card format</label>
-      <select class="form-select">
-        <option>85×54mm (wallet card)</option>
-        <option>A5 landscape</option>
-        <option>A4 portrait</option>
-      </select>
-    </div>
-    <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
-      <label class="form-label" style="margin:0;">Print QR on card</label>
-      <button class="toggle on"></button>
-    </div>
-    <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
-      <label class="form-label" style="margin:0;">Include score comparison</label>
-      <button class="toggle on"></button>
-    </div>
-    <button class="btn btn-primary" style="margin-top:4px;">Save configuration</button>`;
-}
-
-function renderAnalytics() {
-  const actStats = [
-    { name: 'مغامرة زيد', pct: 94 }, { name: 'رحلة الاستكشاف', pct: 100 },
-    { name: 'طبّاخ المعلومات', pct: 87 }, { name: 'بث مباشر', pct: 82 },
-    { name: 'مركز الأزمات', pct: 71 },
-  ];
-  document.getElementById('activityStats').innerHTML = actStats.map(a => `
-    <div style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span style="font-size:12px;direction:rtl;">${a.name}</span>
-        <span style="font-size:12px;color:var(--teal);">${a.pct}%</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${a.pct}%"></div></div>
-    </div>`).join('');
-
-  const missed = [
-    { q: 'سؤال كلمة المرور الضعيفة', pct: 42 },
-    { q: 'سؤال الرابط المشبوه', pct: 38 },
-    { q: 'سؤال مشاركة الصور', pct: 31 },
-    { q: 'سؤال هوية الغرباء', pct: 27 },
-  ];
-  document.getElementById('missedQuestions').innerHTML = missed.map(m => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);direction:rtl;">
-      <span style="font-size:12px;flex:1;">${m.q}</span>
-      <span class="badge badge-red">${m.pct}% missed</span>
-    </div>`).join('');
-}
-
-function renderMedia() {
-  const items = [
-    { name: 'mascot-robot.svg', type: 'SVG', size: '12kb', icon: '🤖' },
-    { name: 'zaid-character.png', type: 'PNG', size: '84kb', icon: '🧒' },
-    { name: 'success-sound.mp3', type: 'MP3', size: '32kb', icon: '🔊' },
-    { name: 'background-city.jpg', type: 'JPG', size: '220kb', icon: '🏙️' },
-    { name: 'shield-icon.svg', type: 'SVG', size: '4kb', icon: '🛡️' },
-    { name: 'fail-buzzer.mp3', type: 'MP3', size: '18kb', icon: '🔔' },
-  ];
-  document.getElementById('mediaGrid').innerHTML = items.map(m => `
-    <div class="card" style="cursor:pointer;" onmouseenter="this.style.borderColor='var(--teal-border)'" onmouseleave="this.style.borderColor='var(--border)'">
-      <div style="height:70px;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--bg3);">${m.icon}</div>
-      <div class="card-body" style="padding:10px;">
-        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${m.type} · ${m.size}</div>
-      </div>
-    </div>`).join('');
-}
-
-function renderSettings() {
-  const features = [
-    { label: 'QR card printing', on: true },
-    { label: 'Pre/post score comparison', on: true },
-    { label: 'Certificate auto-print', on: true },
-    { label: 'Analytics tracking', on: true },
-    { label: 'Offline mode', on: false },
-    { label: 'Multi-language support', on: false },
-  ];
-  document.getElementById('featureToggles').innerHTML = features.map(f => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);">
-      <span style="font-size:13px;">${f.label}</span>
-      <button class="toggle ${f.on ? 'on' : ''}" onclick="this.classList.toggle('on')"></button>
-    </div>`).join('');
-}
-
-// ===== PREVIEW =====
-let currentPreviewIdx = null;
-
-const activityPreviews = {
-  'رحلة الاستكشاف الرقمي': buildQuizPreview,
-  'مغامرة زيد الرقمية': buildStoryPreview,
-  'محطة الرادار الرقمي': buildRadarPreview,
-  'مرآة الأمان': buildMirrorPreview,
-  'طبّاخ المعلومات': buildCookingPreview,
-  'نهر الفقاعات': buildBubblesPreview,
-  'بث مباشر': buildLivestreamPreview,
-};
-
-function previewActivity(idx) {
-  currentPreviewIdx = idx;
-  const a = activities[idx];
-  document.getElementById('preview-icon').textContent = a.icon;
-  document.getElementById('preview-modal-title').textContent = a.name;
-  document.getElementById('preview-modal-sub').textContent = a.type + ' · ' + a.age + ' years';
-  document.getElementById('preview-status').textContent = a.status === 'published' ? '● Published' : '● Draft';
-  document.getElementById('preview-status').className = 'badge ' + (a.status === 'published' ? 'badge-green' : 'badge-gold');
-  setPreviewDevice('full');
-  const builder = activityPreviews[a.name];
-  const html = builder ? builder(a) : buildGenericPreview(a);
-  const iframe = document.getElementById('preview-iframe');
-  iframe.srcdoc = html;
-  openModal('modal-preview');
-}
-
-function setPreviewDevice(mode) {
-  const box = document.getElementById('preview-box');
-  const wrap = document.getElementById('preview-wrap');
-  ['full','tablet','kiosk'].forEach(m => {
-    const btn = document.getElementById('btn-' + m);
-    if (btn) { btn.style.background = 'var(--bg3)'; btn.style.color = 'var(--text2)'; }
-  });
-  const active = document.getElementById('btn-' + mode);
-  if (active) { active.style.background = 'var(--teal)'; active.style.color = 'white'; }
-  if (mode === 'full') {
-    box.style.width = '100%'; box.style.height = '100%'; box.style.borderRadius = '10px';
-  } else if (mode === 'tablet') {
-    box.style.width = '768px'; box.style.height = '560px'; box.style.borderRadius = '16px';
-  } else {
-    box.style.width = '430px'; box.style.height = '780px'; box.style.borderRadius = '28px';
+// ===== PHASES DATA =====
+const phases = [
+  {
+    id: 'welcome',
+    label: 'الدخول إلى الحاسوب',
+    narrative: 'أنت الآن داخل الحاسوب! هذه هي شبكة البيانات — أنابيب ضوئية تنقل المعلومات بسرعة الضوء. كل نقطة ضوء هي بيانات تنتقل بين المكونات.',
+    color: 0x00ff99,
+    alertVisible: false,
+    hasAction: false,
+    camTarget: { x: 0, y: 0, z: 5 }
+  },
+  {
+    id: 'malware_enter',
+    label: 'دخول البرمجية الخبيثة',
+    narrative: 'تحذير! برمجية خبيثة دخلت عبر رابط مشبوه ضغط عليه المستخدم. انظر إلى اليمين — الجسيمات الحمراء هي الفيروس يتكاثر في الشبكة!',
+    color: 0xff4444,
+    alertVisible: true,
+    hasAction: false,
+    camTarget: { x: 8, y: 2, z: 3 }
+  },
+  {
+    id: 'breach',
+    label: 'اختراق النظام',
+    narrative: 'الفيروس يحاول الوصول إلى البيانات الخاصة! يمكنك رؤيته يخترق طبقات الحماية — كل خط أحمر هو اختراق لطبقة أمان.',
+    color: 0xff6600,
+    alertVisible: true,
+    hasAction: true,
+    actionTitle: '⚠️ الفيروس يخترق النظام!',
+    actionSub: 'ماذا يجب أن يفعل النظام أولاً؟',
+    choices: [
+      { icon: '🔌', text: 'عزل الشبكة', correct: true, feedback: 'ممتاز! عزل الشبكة يوقف انتشار الفيروس فوراً' },
+      { icon: '🗑️', text: 'حذف الملفات', correct: false, feedback: 'ليس الأفضل — الحذف لا يوقف الانتشار أولاً' },
+      { icon: '🔄', text: 'إعادة التشغيل', correct: false, feedback: 'خاطئ — إعادة التشغيل قد تنشّط الفيروس أكثر' }
+    ],
+    camTarget: { x: -5, y: 3, z: 4 }
+  },
+  {
+    id: 'firewall',
+    label: 'تفعيل جدار الحماية',
+    narrative: 'جدار الحماية تفعّل! الخطوط الزرقاء الوامضة تمثل جدار الحماية يوقف كل الاتصالات غير المصرح بها. الفيروس لا يستطيع الخروج الآن.',
+    color: 0x4db8ff,
+    alertVisible: false,
+    hasAction: false,
+    camTarget: { x: 0, y: 5, z: 8 }
+  },
+  {
+    id: 'antivirus',
+    label: 'مكافح الفيروسات',
+    narrative: 'برنامج مكافحة الفيروسات يفحص كل الملفات الآن! الجسيمات البيضاء الساطعة هي عوامل الفحص تبحث عن الكود الضار وتحذفه.',
+    color: 0xffffff,
+    alertVisible: false,
+    hasAction: true,
+    actionTitle: '🔍 تم اكتشاف الفيروس!',
+    actionSub: 'ما الخطوة الصحيحة بعد إزالة الفيروس؟',
+    choices: [
+      { icon: '🔑', text: 'تغيير كلمات المرور', correct: true, feedback: 'صحيح! الفيروس ربما سرق كلمات المرور، يجب تغييرها فوراً' },
+      { icon: '😴', text: 'لا شيء، انتهى الأمر', correct: false, feedback: 'خاطئ! يجب التحقق مما سُرق أو تأثر' },
+      { icon: '🎮', text: 'متابعة الاستخدام', correct: false, feedback: 'خاطئ! يجب التأكد من إزالة كل أثر للفيروس أولاً' }
+    ],
+    camTarget: { x: 3, y: -2, z: 6 }
+  },
+  {
+    id: 'recovery',
+    label: 'استعادة النظام',
+    narrative: 'النظام يتعافى! البيانات المحذوفة تُستعاد من النسخة الاحتياطية. دائماً احتفظ بنسخة احتياطية — إنها طوق النجاة عند الهجمات.',
+    color: 0x00ff99,
+    alertVisible: false,
+    hasAction: false,
+    camTarget: { x: -3, y: 0, z: 10 }
+  },
+  {
+    id: 'protected',
+    label: 'الحماية الكاملة',
+    narrative: '🎉 الحاسوب محمي الآن! كل الأضواء الخضراء تعني: جدار الحماية نشط، مكافح الفيروسات محدّث، كلمات المرور قوية، والنسخ الاحتياطية جاهزة.',
+    color: 0x00ff99,
+    alertVisible: false,
+    hasAction: false,
+    isLast: true,
+    camTarget: { x: 0, y: 0, z: 0 }
   }
+];
+
+// ===== THREE.JS SETUP =====
+let scene, camera, renderer;
+let particles = [], connections = [], virusParticles = [], firewallLines = [];
+let frameId, currentPhase = 0;
+let mouseX = 0, mouseY = 0;
+let targetRotX = 0, targetRotY = 0;
+let isDragging = false, lastX = 0, lastY = 0;
+let touchStartX = 0, touchStartY = 0;
+let actionAnswered = false;
+
+function initThree() {
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x000510, 0.035);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 0, 15);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000510, 1);
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  buildScene();
+  setupControls();
+  animate();
+
+  window.addEventListener('resize', onResize);
 }
 
-function reloadPreview() {
-  if (currentPreviewIdx !== null) {
-    const iframe = document.getElementById('preview-iframe');
-    const src = iframe.srcdoc;
-    iframe.srcdoc = '';
-    setTimeout(() => iframe.srcdoc = src, 80);
+function buildScene() {
+  // Data nodes
+  const nodeGeo = new THREE.SphereGeometry(0.15, 8, 8);
+  const positions = [];
+  for (let i = 0; i < 80; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.8 });
+    const node = new THREE.Mesh(nodeGeo, mat);
+    const x = (Math.random() - 0.5) * 40;
+    const y = (Math.random() - 0.5) * 20;
+    const z = (Math.random() - 0.5) * 40;
+    node.position.set(x, y, z);
+    node.userData = { ox: x, oy: y, oz: z, speed: Math.random() * 0.01 + 0.005, phase: Math.random() * Math.PI * 2 };
+    scene.add(node);
+    particles.push(node);
+    positions.push(new THREE.Vector3(x, y, z));
   }
-}
 
-function editFromPreview() {
-  closeModal('modal-preview');
-  openModal('modal-activity');
-  if (currentPreviewIdx !== null) prefillEditForm(currentPreviewIdx);
-}
-
-function publishActivity() {
-  if (currentPreviewIdx !== null) {
-    activities[currentPreviewIdx].status = 'published';
-    document.getElementById('preview-status').textContent = '● Published';
-    document.getElementById('preview-status').className = 'badge badge-green';
-    renderActivities();
-    showToast('Activity published successfully!');
-  }
-}
-
-function editActivity(idx) {
-  currentPreviewIdx = idx;
-  openModal('modal-activity');
-  prefillEditForm(idx);
-}
-
-function prefillEditForm(idx) {
-  const a = activities[idx];
-  const modal = document.getElementById('modal-activity');
-  const inputs = modal.querySelectorAll('.form-input, .form-select, .form-textarea');
-  if (inputs[0]) inputs[0].value = a.name;
-  if (inputs[3]) inputs[3].value = a.icon;
-  const selects = modal.querySelectorAll('.form-select');
-  selects.forEach(s => {
-    [...s.options].forEach(o => {
-      if (o.value === a.type || o.text === a.type) s.value = o.value;
-      if (o.text.includes(a.age.split('–')[0])) s.value = o.value;
-    });
-  });
-  const titleEl = modal.querySelector('.modal-title');
-  if (titleEl) titleEl.textContent = '✏️ Edit activity: ' + a.name;
-}
-
-function showToast(msg) {
-  const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--teal);color:white;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;animation:slideUp .3s ease;';
-  t.textContent = '✓ ' + msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
-}
-
-// ===== PREVIEW BUILDERS =====
-function baseHTML(bodyContent) {
-  return `<!DOCTYPE html><html lang="ar" dir="rtl"><head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Tajawal',sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;direction:rtl;}
-    .card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px;width:100%;max-width:600px;}
-    .btn{background:linear-gradient(135deg,#1D9E75,#0f6e56);border:none;border-radius:50px;padding:14px 36px;font-size:18px;font-weight:700;color:white;cursor:pointer;font-family:'Tajawal',sans-serif;margin-top:8px;}
-    .btn:hover{opacity:.9;}
-    .choice{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:16px;cursor:pointer;margin-bottom:10px;font-size:16px;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:12px;}
-    .choice:hover{border-color:#1D9E75;background:rgba(29,158,117,0.12);}
-    .badge-teal{background:rgba(29,158,117,0.15);color:#9FE1CB;border:1px solid rgba(29,158,117,0.3);padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;display:inline-block;}
-    h1{font-size:clamp(22px,5vw,36px);font-weight:900;margin-bottom:12px;}
-    p{font-size:16px;color:rgba(230,237,243,0.7);line-height:1.7;margin-bottom:16px;}
-    .emoji-big{font-size:60px;text-align:center;margin-bottom:16px;}
-  </style></head><body>${bodyContent}</body></html>`;
-}
-
-function buildQuizPreview(a) {
-  const qs = questions.filter(q => q.activity === a.name);
-  const q = qs[0] || { text: 'مثال على سؤال الأمن السيبراني — اختر الإجابة الصحيحة', scene: '📱💬' };
-  return baseHTML(`
-    <div style="width:100%;max-width:600px;text-align:center;">
-      <div style="font-size:64px;margin-bottom:16px;">🤖</div>
-      <h1>رحلة الاستكشاف الرقمي</h1>
-      <span class="badge-teal">السؤال 1 من 5</span>
-      <div class="card" style="margin:20px 0;text-align:right;">
-        <div style="font-size:48px;text-align:center;margin-bottom:12px;">📱</div>
-        <p style="font-size:18px;font-weight:700;color:#e6edf3;text-align:center;">${q.text}</p>
-      </div>
-      <div style="width:100%;max-width:600px;">
-        <div class="choice"><span style="font-size:28px;">🗑️</span><span>أحذف الرسالة فوراً ولا أرد</span></div>
-        <div class="choice"><span style="font-size:28px;">✉️</span><span>أكتب العنوان وأرسله</span></div>
-      </div>
-      <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:12px;">
-        <span style="font-size:32px;">🤖</span>
-        <span style="font-size:15px;">فكّر جيداً واختر الإجابة التي تراها صحيحة! 💭</span>
-      </div>
-    </div>`);
-}
-
-function buildStoryPreview(a) {
-  const s = storyScenes.find(sc => sc.age === '7–9') || storyScenes[0];
-  return baseHTML(`
-    <div style="width:100%;max-width:660px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="background:rgba(29,158,117,0.15);color:#9FE1CB;border:1px solid rgba(29,158,117,0.3);padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;">🎮 مغامرة زيد الرقمية</span>
-        <span style="font-size:13px;color:rgba(230,237,243,0.5);">موقف 1 من 5</span>
-      </div>
-      <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px;">
-        <div style="background:linear-gradient(135deg,rgba(29,158,117,0.15),rgba(56,139,253,0.1));padding:28px;text-align:center;font-size:72px;border-bottom:1px solid rgba(255,255,255,0.1);">
-          🧒 📱
-          <div style="font-size:12px;color:rgba(230,237,243,0.4);margin-top:8px;">زيد يتصفح هاتفه</div>
-        </div>
-        <div style="padding:20px;">
-          <div style="font-size:12px;color:#1D9E75;font-weight:700;margin-bottom:8px;">زيد — طفل في مثل عمرك 👦</div>
-          <p style="font-size:17px;font-weight:700;color:#e6edf3;">${s ? s.text : 'يلعب زيد على هاتفه ويتلقى إشعاراً مريباً...'}</p>
-          <p style="color:#EF9F27;font-weight:700;margin-top:8px;">ماذا يجب أن يفعل زيد؟</p>
-        </div>
-      </div>
-      <div class="choice">أ&nbsp;&nbsp; يضغط على الرابط ليستلم الجائزة</div>
-      <div class="choice">ب&nbsp;&nbsp; يتجاهل الرسالة ويخبر والديه ✅</div>
-      <div class="choice">ج&nbsp;&nbsp; يرسل الرسالة لأصدقائه</div>
-    </div>`);
-}
-
-function buildRadarPreview(a) {
-  return baseHTML(`
-    <div style="width:100%;max-width:600px;text-align:center;">
-      <h1>📡 محطة الرادار الرقمي</h1>
-      <p>اختبر قوتك في الأمن السيبراني — لعمر 10–12 سنة</p>
-      <div class="card" style="margin:16px 0;">
-        <div style="font-size:48px;font-weight:900;color:#1D9E75;margin-bottom:8px;">0:10</div>
-        <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:4px;margin-bottom:16px;">
-          <div style="height:6px;background:linear-gradient(90deg,#1D9E75,#9FE1CB);border-radius:4px;width:80%;transition:width 0.1s;"></div>
-        </div>
-        <p style="font-size:18px;font-weight:700;text-align:right;">استقبال رسالة نصية تبدو من المصرف تطلب الضغط على رابط مرفق لتحديث البيانات فوراً</p>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;">
-        <div class="choice" style="justify-content:center;background:rgba(248,81,73,0.08);border-color:rgba(248,81,73,0.3);">⚠️ خطر</div>
-        <div class="choice" style="justify-content:center;background:rgba(29,158,117,0.1);border-color:rgba(29,158,117,0.4);">✅ آمن</div>
-      </div>
-    </div>`);
-}
-
-function buildMirrorPreview(a) {
-  return baseHTML(`
-    <div style="width:100%;max-width:700px;text-align:center;">
-      <h1>🪞 مرآة الأمان</h1>
-      <p>أجب بصدق لتبني نسختك الرقمية المحمية</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;">
-        <div class="card" style="text-align:center;">
-          <div style="font-size:80px;margin-bottom:8px;">🧒</div>
-          <div style="font-size:13px;color:rgba(230,237,243,0.5);margin-bottom:4px;">نسختك الرقمية</div>
-          <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;margin-top:8px;">
-            <div style="height:100%;width:60%;background:linear-gradient(90deg,#1D9E75,#9FE1CB);border-radius:4px;"></div>
-          </div>
-          <div style="font-size:11px;color:#1D9E75;margin-top:4px;">طبقات الحماية: 3/5</div>
-        </div>
-        <div class="card">
-          <p style="font-size:17px;font-weight:700;margin-bottom:16px;">هل تشارك صورك الشخصية مع العائلة فقط؟</p>
-          <div class="choice">✅ نعم، العائلة فقط</div>
-          <div class="choice">❌ لا، مع الجميع</div>
-        </div>
-      </div>
-    </div>`);
-}
-
-function buildCookingPreview(a) {
-  return baseHTML(`
-    <div style="width:100%;max-width:600px;text-align:center;">
-      <h1>🍳 طبّاخ المعلومات</h1>
-      <p>اختر المكونات الآمنة لطبق الأمان الرقمي</p>
-      <div class="card" style="margin:12px 0;">
-        <div style="font-size:11px;color:rgba(230,237,243,0.5);margin-bottom:8px;">وصفة اليوم</div>
-        <div style="font-size:20px;font-weight:900;color:#1D9E75;margin-bottom:4px;">طبق التعارف الآمن</div>
-        <div style="font-size:14px;color:rgba(230,237,243,0.6);">اختر المكونات الصحيحة فقط</div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
-        ${[['🏠','عنوان المنزل','danger'],['😊','الاسم الأول','safe'],['🎨','اللون المفضل','safe'],['🔑','كلمة المرور','danger'],['🐾','الحيوان الأليف','safe'],['📞','رقم الهاتف','danger']].map(([e,n,t]) => `
-        <div class="choice" style="flex-direction:column;text-align:center;padding:12px 8px;${t==='safe'?'border-color:#1D9E75;':''}">
-          <span style="font-size:28px;">${e}</span>
-          <span style="font-size:12px;margin-top:4px;">${n}</span>
-        </div>`).join('')}
-      </div>
-      <div style="font-size:40px;margin-bottom:8px;">🍲</div>
-      <div style="font-size:13px;color:rgba(230,237,243,0.5);">اسحب المكونات الآمنة إلى القِدر</div>
-    </div>`);
-}
-
-function buildBubblesPreview(a) {
-  return baseHTML(`
-    <div style="width:100%;max-width:680px;text-align:center;">
-      <h1>🫧 نهر الفقاعات الرقمية</h1>
-      <p>افرز الفقاعات — آمنة أم مشبوهة أم خطرة؟</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0;">
-        <div style="background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.3);border-radius:12px;padding:12px;text-align:center;">
-          <div style="font-size:11px;color:#9FE1CB;margin-bottom:4px;">✅ ضفة الأمان</div>
-        </div>
-        <div style="background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);border-radius:12px;padding:12px;text-align:center;">
-          <div style="font-size:11px;color:#d29922;margin-bottom:4px;">⚠️ ضفة التحذير</div>
-        </div>
-        <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:12px;padding:12px;text-align:center;">
-          <div style="font-size:11px;color:#f85149;margin-bottom:4px;">🔴 ضفة الخطر</div>
-        </div>
-      </div>
-      <div style="position:relative;height:120px;background:rgba(56,139,253,0.05);border:1px solid rgba(56,139,253,0.15);border-radius:12px;display:flex;align-items:center;justify-content:space-around;padding:10px;margin-bottom:12px;">
-        <div style="font-size:11px;color:rgba(230,237,243,0.4);position:absolute;top:6px;left:10px;">نهر المعلومات</div>
-        ${[['📧','رسالة مريبة','danger'],['✅','موقع موثوق','safe'],['🎁','اضغط هنا','danger'],['📸','صورة شخصية','warn']].map(([e,n,t])=>`
-        <div style="background:${t==='safe'?'rgba(29,158,117,0.2)':t==='warn'?'rgba(210,153,34,0.2)':'rgba(248,81,73,0.2)'};border:1px solid ${t==='safe'?'rgba(29,158,117,0.4)':t==='warn'?'rgba(210,153,34,0.4)':'rgba(248,81,73,0.4)'};border-radius:50%;width:64px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;font-size:20px;">
-          ${e}<div style="font-size:9px;margin-top:2px;">${n}</div>
-        </div>`).join('')}
-      </div>
-      <p style="font-size:13px;color:rgba(230,237,243,0.4);">اسحب كل فقاعة إلى الضفة الصحيحة</p>
-    </div>`);
-}
-
-function buildLivestreamPreview(a) {
-  return baseHTML(`
-    <div style="width:100%;max-width:700px;">
-      <h1 style="text-align:center;">📺 استوديو البث الآمن</h1>
-      <div class="card" style="padding:0;overflow:hidden;margin:12px 0;">
-        <div style="background:rgba(29,158,117,0.08);padding:16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
-          <div style="background:#f85149;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">● LIVE</div>
-          <span style="font-size:14px;font-weight:700;">استوديو البث الأمن السيبراني</span>
-          <span style="margin-right:auto;font-size:12px;color:rgba(230,237,243,0.5);">👁 12.5K مشاهد</span>
-        </div>
-        <div style="padding:16px;display:grid;grid-template-columns:1fr 220px;gap:12px;">
-          <div>
-            <div style="background:rgba(0,0,0,0.3);border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:12px;">🎙️</div>
-            <div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:10px;padding:12px;margin-bottom:8px;">
-              <div style="font-size:11px;color:#f85149;margin-bottom:4px;">⚠️ موقف طارئ</div>
-              <p style="font-size:14px;font-weight:700;">رسالة من @مجهول: أرسل لنا عنوانك لتحصل على جائزة مفاجئة!</p>
-            </div>
-          </div>
-          <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:10px;">
-            <div style="font-size:11px;color:rgba(230,237,243,0.4);margin-bottom:8px;">التعليقات المباشرة</div>
-            ${['أحمد: رائع!','سارة: بث رائع 🔥','خالد: أحسنت!','مجهول: أرسل عنوانك','نورة: مغامرة ممتعة'].map(c=>`<div style="font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">${c}</div>`).join('')}
-          </div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="choice" style="justify-content:center;">📤 مشاركة العنوان</div>
-        <div class="choice" style="justify-content:center;border-color:#1D9E75;">🚫 تجاهل الطلب ✅</div>
-      </div>
-    </div>`);
-}
-
-function buildGenericPreview(a) {
-  return baseHTML(`
-    <div style="width:100%;max-width:560px;text-align:center;">
-      <div style="font-size:80px;margin-bottom:20px;">${a.icon}</div>
-      <h1>${a.name}</h1>
-      <p>${a.type} · للفئة العمرية ${a.age}</p>
-      <div class="card" style="margin:20px 0;text-align:right;">
-        <p>هذا النشاط من نوع <strong>${a.type}</strong>. محتواه التفاعلي سيظهر هنا بعد إضافة الأسئلة والمحتوى من لوحة التحكم.</p>
-      </div>
-      <button class="btn">ابدأ النشاط ▶</button>
-    </div>`);
-}
-
-function saveActivity() {
-  const modal = document.getElementById('modal-activity');
-  const inputs = modal.querySelectorAll('.form-input');
-  const name = inputs[0]?.value?.trim();
-  if (name) {
-    const selects = modal.querySelectorAll('.form-select');
-    const type = selects[0]?.value || 'Quiz';
-    const age = selects[1]?.value || '7–9 years';
-    const icon = inputs[3]?.value || '🎮';
-    const status = selects[3]?.value?.toLowerCase() || 'draft';
-    if (currentPreviewIdx !== null && document.getElementById('modal-activity').querySelector('.modal-title')?.textContent?.includes('Edit')) {
-      activities[currentPreviewIdx] = { ...activities[currentPreviewIdx], name, type, age: age.replace(' years',''), icon, status };
-    } else {
-      activities.push({ name, type, age: age.replace(' years',''), icon, status, questions: 0 });
+  // Connection lines between nearby nodes
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.12 });
+  for (let i = 0; i < positions.length; i++) {
+    for (let j = i + 1; j < positions.length; j++) {
+      if (positions[i].distanceTo(positions[j]) < 6) {
+        const geo = new THREE.BufferGeometry().setFromPoints([positions[i], positions[j]]);
+        const line = new THREE.Line(geo, lineMat.clone());
+        scene.add(line);
+        connections.push(line);
+      }
     }
-    renderActivities();
-    showToast(status === 'draft' ? 'Activity saved as draft' : 'Activity created!');
-    currentPreviewIdx = null;
   }
-  closeModal('modal-activity');
-  const titleEl = document.getElementById('modal-activity').querySelector('.modal-title');
-  if (titleEl) titleEl.textContent = '＋ Create new activity';
-}
 
-// ===== INIT =====
-renderSessions(document.getElementById('recentSessions'), sessions);
-renderSessions(document.getElementById('allSessionsTable'), [...sessions, ...sessions.slice(0,3)]);
-renderActivities();
-renderQuestions();
-renderStories();
-renderUsers();
-renderChart();
-renderAgeGroups();
-renderCertificates();
-renderAnalytics();
-renderMedia();
-renderSettings();
-
-// ===== MOBILE SIDEBAR =====
-function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebar-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// ===== BOTTOM NAV =====
-function bottomNav(page, btn) {
-  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  nav(page);
-}
-
-// Swipe right from left edge to open, swipe left to close
-let touchStartX = 0;
-document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-document.addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if (dx > 60 && touchStartX < 30) openSidebar();
-  if (dx < -60) closeSidebar();
-}, { passive: true });
-
-// ===== ROLE SWITCHER =====
-let currentRole = 'admin';
-
-function switchRole(role) {
-  currentRole = role;
-  document.getElementById('nav-admin').style.display = role === 'admin' ? 'block' : 'none';
-  document.getElementById('nav-dev').style.display = role === 'dev' ? 'block' : 'none';
-  document.getElementById('portal-sub-label').textContent = role === 'admin' ? 'Admin Portal' : 'Developer Portal';
-  document.getElementById('role-admin').style.background = role === 'admin' ? 'var(--teal)' : 'none';
-  document.getElementById('role-admin').style.color = role === 'admin' ? 'white' : 'var(--text2)';
-  document.getElementById('role-dev').style.background = role === 'dev' ? 'var(--purple)' : 'none';
-  document.getElementById('role-dev').style.color = role === 'dev' ? 'white' : 'var(--text2)';
-  document.getElementById('user-avatar').style.background = role === 'dev'
-    ? 'linear-gradient(135deg,#a371f7,#7c3aed)' : 'linear-gradient(135deg,var(--teal),#0f6e56)';
-  document.getElementById('user-avatar').textContent = role === 'dev' ? 'T' : 'T';
-  document.getElementById('user-name').textContent = 'Test';
-  document.getElementById('user-role').textContent = role === 'dev' ? 'Developer' : 'Super Admin';
-  if (role === 'dev') {
-    nav('dev-templates');
-    renderDevTemplates();
-  } else {
-    nav('dashboard');
+  // Central data streams (tubes)
+  for (let i = 0; i < 8; i++) {
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, -15),
+      new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*5, 0),
+      new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, 15),
+    ]);
+    const tubeGeo = new THREE.TubeGeometry(curve, 20, 0.04, 4, false);
+    const tubeMat = new THREE.MeshBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.15 });
+    const tube = new THREE.Mesh(tubeGeo, tubeMat);
+    scene.add(tube);
+    connections.push(tube);
   }
-}
 
-// extend nav to handle dev pages
-const _origNav = nav;
+  // Ambient light
+  const ambientLight = new THREE.AmbientLight(0x00ff99, 0.1);
+  scene.add(ambientLight);
 
-// ===== DEV DATA =====
-const gameTemplates = [
-  { name:'Quiz / Q&A', icon:'📋', type:'quiz', status:'ready', games: 4, desc:'Multiple choice questions with scoring, pre/post comparison, QR card' },
-  { name:'Story / Film', icon:'📖', type:'story', status:'ready', games: 2, desc:'Interactive narrative with decision points and lesson cards' },
-  { name:'Drag & Sort', icon:'🫧', type:'drag', status:'ready', games: 3, desc:'Drag items to categories — bubbles, ingredients, cards' },
-  { name:'Timed Decision', icon:'⏱', type:'timed', status:'ready', games: 1, desc:'10-second countdown, safe-or-danger decisions, radar score' },
-  { name:'Tap-the-scene', icon:'🏙', type:'scene', status:'building', games: 0, desc:'Tap objects in a scene to identify threats — city, hospital, castle' },
-  { name:'Simulation', icon:'🚨', type:'simulation', status:'building', games: 1, desc:'Multi-role crisis management, assign roles, drag priority steps' },
-];
+  // Central sphere (CPU/core)
+  const coreGeo = new THREE.IcosahedronGeometry(1.5, 2);
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ff99, wireframe: true, transparent: true, opacity: 0.3 });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  scene.add(core);
+  particles.push(core); // add to animate
 
-const apiEndpoints = [
-  { method:'GET', endpoint:'/activities', desc:'List all activities', auth:'Any' },
-  { method:'GET', endpoint:'/activities/:id', desc:'Get single activity with questions & scenes', auth:'Any' },
-  { method:'POST', endpoint:'/activities', desc:'Create new activity', auth:'Editor+' },
-  { method:'PUT', endpoint:'/activities/:id', desc:'Update activity', auth:'Editor+' },
-  { method:'DELETE', endpoint:'/activities/:id', desc:'Delete activity', auth:'Admin' },
-  { method:'GET', endpoint:'/questions?activity_id=', desc:'List questions for activity', auth:'Any' },
-  { method:'POST', endpoint:'/questions', desc:'Create question with choices', auth:'Editor+' },
-  { method:'GET', endpoint:'/sessions', desc:'List visitor sessions', auth:'Admin' },
-  { method:'POST', endpoint:'/sessions', desc:'Start new visitor session', auth:'Any' },
-  { method:'PUT', endpoint:'/sessions/:id/score', desc:'Save pre or post score', auth:'Any' },
-  { method:'POST', endpoint:'/certificates', desc:'Generate + print certificate', auth:'Any' },
-  { method:'GET', endpoint:'/templates', desc:'List game templates', auth:'Dev' },
-  { method:'POST', endpoint:'/templates', desc:'Register new template', auth:'Dev' },
-];
+  // Grid floor
+  const gridHelper = new THREE.GridHelper(60, 30, 0x00ff99, 0x00ff99);
+  gridHelper.material.transparent = true;
+  gridHelper.material.opacity = 0.05;
+  gridHelper.position.y = -10;
+  scene.add(gridHelper);
 
-const roomScreens = [
-  { id:'SCREEN-01', location:'Entry — Testing zone', type:'Kiosk (portrait)', res:'1080×1920', activity:'رحلة الاستكشاف الرقمي', status:'online' },
-  { id:'SCREEN-02', location:'Children zone — Mirror', type:'Large display', res:'3840×2160', activity:'مرآة الأمان', status:'online' },
-  { id:'SCREEN-03', location:'Table 1 — Bubbles', type:'Touch table', res:'3840×2160', activity:'نهر الفقاعات', status:'online' },
-  { id:'SCREEN-04', location:'Table 2 — City', type:'Touch table', res:'3840×2160', activity:'المدينة الآمنة', status:'offline' },
-  { id:'SCREEN-05', location:'Cinema zone', type:'Interactive board', res:'3840×2160', activity:'مغامرة زيد الرقمية', status:'online' },
-  { id:'SCREEN-06', location:'VR zone', type:'VR headsets ×4', res:'N/A', activity:'رحلة داخل الحاسوب', status:'maintenance' },
-];
+  // Virus particles (hidden initially)
+  const virusGeo = new THREE.SphereGeometry(0.12, 6, 6);
+  for (let i = 0; i < 40; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0 });
+    const v = new THREE.Mesh(virusGeo, mat);
+    v.position.set((Math.random()-0.5)*30, (Math.random()-0.5)*15, (Math.random()-0.5)*30);
+    v.userData = { speed: Math.random()*0.02+0.01, phase: Math.random()*Math.PI*2 };
+    scene.add(v);
+    virusParticles.push(v);
+  }
 
-const sdkHooks = [
-  { fn:'cyberRoom.getActivity()', returns:'Promise<Activity>', desc:'Fetch current activity with all questions, scenes, and media from the API' },
-  { fn:'cyberRoom.onAnswer(correct, questionIdx)', returns:'void', desc:'Record an answer — updates session score internally' },
-  { fn:'cyberRoom.nextScene()', returns:'void', desc:'Advance to the next story scene' },
-  { fn:'cyberRoom.finish(finalScore)', returns:'void', desc:'End the game, save score, trigger results screen and certificate flow' },
-  { fn:'cyberRoom.playSound(key)', returns:'void', desc:'Play a sound: "correct", "wrong", "win", "tick", "fanfare"' },
-  { fn:'cyberRoom.getMedia(key)', returns:'string URL', desc:'Get a media asset URL uploaded in the Media section' },
-  { fn:'cyberRoom.t(key)', returns:'string', desc:'Get translated UI string — respects current language setting' },
-  { fn:'cyberRoom.getPlayerName()', returns:'string', desc:'Get the visitor name entered at the quiz start screen' },
-  { fn:'cyberRoom.onTimeOut(fn)', returns:'void', desc:'Register callback when the timer reaches zero (timed templates)' },
-  { fn:'cyberRoom.setProgress(step, total)', returns:'void', desc:'Update the top progress bar to show step/total' },
-];
-
-const deployStepsData = [
-  { step:1, label:'Pull latest from GitHub', cmd:'git pull origin main', status:'done' },
-  { step:2, label:'Install dependencies', cmd:'npm install', status:'done' },
-  { step:3, label:'Run database migrations', cmd:'npm run migrate', status:'done' },
-  { step:4, label:'Build frontend assets', cmd:'npm run build', status:'pending' },
-  { step:5, label:'Restart room server', cmd:'pm2 restart cyber-room', status:'pending' },
-];
-
-const uiComponents = [
-  { name:'QuizCard', icon:'📋', desc:'Question + choice grid with feedback animations', usage:'<QuizCard question={q} onAnswer={fn} />' },
-  { name:'SceneCard', icon:'🎬', desc:'Story scene with emoji visual + narrative text', usage:'<SceneCard scene={s} />' },
-  { name:'TimerRing', icon:'⏱', desc:'Countdown ring with configurable duration', usage:'<TimerRing seconds={10} onEnd={fn} />' },
-  { name:'ProgressBar', icon:'📊', desc:'Animated step progress indicator', usage:'<ProgressBar step={2} total={5} />' },
-  { name:'MascotFeedback', icon:'🤖', desc:'Mascot character with animated reactions', usage:'<MascotFeedback correct={true} />' },
-  { name:'ResultCard', icon:'🏆', desc:'Score display with stars, badge, QR', usage:'<ResultCard score={4} max={5} />' },
-  { name:'DragItem', icon:'🫧', desc:'Draggable item with snap-to-zone behaviour', usage:'<DragItem label="..." onDrop={fn} />' },
-  { name:'DropZone', icon:'🎯', desc:'Drop target zone with visual feedback', usage:'<DropZone id="safe" onDrop={fn} />' },
-  { name:'AgeGroupGate', icon:'👶', desc:'Wrapper that shows content for a specific age', usage:'<AgeGroupGate group="7-9">…</AgeGroupGate>' },
-];
-
-// ===== DEV RENDERERS =====
-function renderDevTemplates() {
-  const grid = document.getElementById('templatesGrid');
-  if (!grid) return;
-  const colors = ['rgba(29,158,117,0.1)','rgba(163,113,247,0.1)','rgba(56,139,253,0.1)','rgba(210,153,34,0.1)','rgba(248,81,73,0.1)','rgba(239,159,39,0.1)'];
-  grid.innerHTML = gameTemplates.map((t, i) => `
-    <div class="activity-card">
-      <div class="activity-card-top" style="background:${colors[i%colors.length]};">
-        <span style="font-size:44px;">${t.icon}</span>
-        <span class="badge ${t.status==='ready'?'badge-green':'badge-gold'}" style="position:absolute;top:8px;right:8px;">${t.status==='ready'?'✓ Ready':'⚙ Building'}</span>
-      </div>
-      <div class="activity-card-body">
-        <div class="activity-card-title">${t.name}</div>
-        <div class="activity-card-sub" style="margin-bottom:6px;">${t.desc}</div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">${t.games} game${t.games!==1?'s':''} using this template</div>
-        <div class="activity-card-footer">
-          <div style="margin-left:auto;display:flex;gap:6px;">
-            <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="nav('dev-builder')">✏️ Edit engine</button>
-            <button class="btn btn-primary" style="padding:4px 8px;font-size:11px;" onclick="previewTemplate(${i})">▶ Preview</button>
-          </div>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-function renderApiEndpoints() {
-  const tb = document.getElementById('apiEndpointsTable');
-  if (!tb) return;
-  const mc = { GET:'badge-green', POST:'badge-blue', PUT:'badge-gold', DELETE:'badge-red' };
-  tb.innerHTML = apiEndpoints.map(e => `
-    <tr>
-      <td><span class="badge ${mc[e.method]}">${e.method}</span></td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9FE1CB;">/api/v1${e.endpoint}</td>
-      <td style="color:var(--text2);">${e.desc}</td>
-      <td><span class="badge badge-gray">${e.auth}</span></td>
-    </tr>`).join('');
-}
-
-function renderScreens() {
-  const tb = document.getElementById('screensTable');
-  if (!tb) return;
-  tb.innerHTML = roomScreens.map(s => `
-    <tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal2);">${s.id}</td>
-      <td>${s.location}</td>
-      <td style="color:var(--text3);">${s.type}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${s.res}</td>
-      <td style="direction:rtl;font-size:12px;">${s.activity}</td>
-      <td><span class="badge ${s.status==='online'?'badge-green':s.status==='offline'?'badge-red':'badge-gold'}">${s.status==='online'?'● Online':s.status==='offline'?'● Offline':'⚠ Maintenance'}</span></td>
-      <td><div style="display:flex;gap:4px;">
-        <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px;">Config</button>
-        <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;">Restart</button>
-      </div></td>
-    </tr>`).join('');
-}
-
-function renderComponents() {
-  const grid = document.getElementById('componentsGrid');
-  if (!grid) return;
-  grid.innerHTML = uiComponents.map(c => `
-    <div class="activity-card" style="cursor:default;">
-      <div class="activity-card-top" style="background:var(--blue-bg,rgba(56,139,253,0.08));font-size:36px;">${c.icon}</div>
-      <div class="activity-card-body">
-        <div class="activity-card-title">${c.name}</div>
-        <div class="activity-card-sub">${c.desc}</div>
-        <div style="background:var(--bg3);border-radius:6px;padding:6px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#9FE1CB;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.usage}</div>
-        <div class="activity-card-footer">
-          <div style="margin-left:auto;">
-            <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;" onclick="navigator.clipboard&&navigator.clipboard.writeText('${c.usage}');showToast('Copied!')">📋 Copy</button>
-          </div>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-function renderHooks() {
-  const ref = document.getElementById('hooksReference');
-  if (!ref) return;
-  ref.innerHTML = sdkHooks.map(h => `
-    <div style="padding:10px 0;border-bottom:1px solid var(--border2);">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#9FE1CB;margin-bottom:3px;">${h.fn}</div>
-      <div style="font-size:11px;color:var(--text3);">Returns: ${h.returns}</div>
-      <div style="font-size:12px;color:var(--text2);margin-top:3px;">${h.desc}</div>
-    </div>`).join('');
-
-  const ex = document.getElementById('hooksCodeExample');
-  if (ex) ex.textContent = `// Quiz template example
-const activity = await cyberRoom.getActivity();
-const questions = activity.questions;
-let current = 0;
-
-function loadQuestion() {
-  const q = questions[current];
-  cyberRoom.setProgress(current + 1, questions.length);
-  renderQuestion(q); // your UI code
-}
-
-function handleAnswer(choiceIdx, isCorrect) {
-  cyberRoom.onAnswer(isCorrect, current);
-  cyberRoom.playSound(isCorrect ? 'correct' : 'wrong');
-  
-  setTimeout(() => {
-    current++;
-    if (current >= questions.length) {
-      cyberRoom.finish(score);
-    } else {
-      loadQuestion();
+  // Firewall lines (hidden initially)
+  for (let i = 0; i < 20; i++) {
+    const pts = [];
+    const x = (Math.random()-0.5)*40;
+    const z = (Math.random()-0.5)*40;
+    for (let j = -10; j <= 10; j += 0.5) {
+      pts.push(new THREE.Vector3(x + Math.sin(j*0.5)*0.3, j, z));
     }
-  }, 1800);
+    const fwGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    const fwMat = new THREE.LineBasicMaterial({ color: 0x4db8ff, transparent: true, opacity: 0 });
+    const fwLine = new THREE.Line(fwGeo, fwMat);
+    scene.add(fwLine);
+    firewallLines.push(fwLine);
+  }
 }
 
-loadQuestion();`;
+function animate() {
+  frameId = requestAnimationFrame(animate);
+  const t = Date.now() * 0.001;
+
+  // Smooth camera rotation
+  targetRotY += (mouseX * 0.0008 - targetRotY) * 0.05;
+  targetRotX += (mouseY * 0.0005 - targetRotX) * 0.05;
+  targetRotX = Math.max(-0.5, Math.min(0.5, targetRotX));
+  camera.rotation.y = targetRotY;
+  camera.rotation.x = targetRotX;
+
+  // Animate nodes
+  particles.forEach((p, i) => {
+    if (p.userData && p.userData.speed) {
+      if (p.geometry && p.geometry.type === 'IcosahedronGeometry') {
+        p.rotation.x = t * 0.3;
+        p.rotation.y = t * 0.5;
+      } else {
+        p.position.y = p.userData.oy + Math.sin(t * p.userData.speed * 10 + p.userData.phase) * 0.5;
+      }
+    }
+  });
+
+  // Virus particles movement
+  virusParticles.forEach(v => {
+    v.position.x += Math.sin(t * v.userData.speed * 5 + v.userData.phase) * 0.02;
+    v.position.y += Math.cos(t * v.userData.speed * 3 + v.userData.phase) * 0.02;
+    v.position.z += Math.sin(t * v.userData.speed * 4 + v.userData.phase + 1) * 0.02;
+  });
+
+  // Pulsing connections
+  connections.forEach((c, i) => {
+    if (c.material && c.material.opacity !== undefined) {
+      const base = c.userData.baseOpacity || c.material.opacity;
+      c.material.opacity = base + Math.sin(t * 2 + i) * 0.05;
+    }
+  });
+
+  renderer.render(scene, camera);
 }
 
-function renderDeploySteps() {
-  const el = document.getElementById('deploySteps');
-  if (!el) return;
-  el.innerHTML = deployStepsData.map(s => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
-      <span style="width:20px;height:20px;border-radius:50%;background:${s.status==='done'?'var(--teal)':'var(--bg4)'};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">${s.status==='done'?'✓':s.step}</span>
-      <div style="flex:1;">
-        <div style="font-size:12px;font-weight:500;">${s.label}</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);">${s.cmd}</div>
-      </div>
-      <span class="badge ${s.status==='done'?'badge-green':'badge-gray'}">${s.status}</span>
-    </div>`).join('');
+// ===== CONTROLS =====
+function setupControls() {
+  const canvas = renderer.domElement;
 
-  const branches = document.getElementById('gitBranches');
-  if (branches) branches.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      ${[['main','Production — live on room server','teal'],['develop','Active development','blue'],['feature/vr-update','VR template update','purple'],['hotfix/qr-fix','QR encoding bugfix','gold']].map(([b,d,c])=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--${c}2,var(--text));">⎇ ${b}</span>
-        <span style="font-size:11px;color:var(--text3);flex:1;">${d}</span>
-        <button class="btn btn-ghost" style="padding:2px 8px;font-size:10px;">Deploy</button>
-      </div>`).join('')}
+  // Mouse
+  canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mousemove', e => {
+    if (isDragging) {
+      mouseX += (e.clientX - lastX) * 2;
+      mouseY += (e.clientY - lastY) * 2;
+      lastX = e.clientX; lastY = e.clientY;
+    }
+  });
+
+  // Touch
+  canvas.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isDragging = true;
+    lastX = touchStartX; lastY = touchStartY;
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const dx = e.touches[0].clientX - lastX;
+    const dy = e.touches[0].clientY - lastY;
+    mouseX += dx * 2.5;
+    mouseY += dy * 2.5;
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', () => isDragging = false, { passive: true });
+
+  // Keyboard
+  const keys = {};
+  window.addEventListener('keydown', e => { keys[e.key] = true; });
+  window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+  setInterval(() => {
+    const speed = 0.15;
+    if (keys['w'] || keys['ArrowUp']) camera.position.z -= speed;
+    if (keys['s'] || keys['ArrowDown']) camera.position.z += speed;
+    if (keys['a'] || keys['ArrowLeft']) camera.position.x -= speed;
+    if (keys['d'] || keys['ArrowRight']) camera.position.x += speed;
+    camera.position.z = Math.max(-20, Math.min(25, camera.position.z));
+  }, 16);
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ===== PHASE SYSTEM =====
+function applyPhase(idx) {
+  const phase = phases[idx];
+
+  // Update narrative
+  document.getElementById('hud-phase').textContent = phase.label;
+  const narEl = document.getElementById('narrative-text');
+  narEl.style.animation = 'none';
+  void narEl.offsetWidth;
+  narEl.style.animation = 'fadeInUp 0.5s ease';
+  narEl.textContent = phase.narrative;
+  document.getElementById('narrative-label').textContent = `المرحلة ${idx + 1} من ${phases.length}`;
+
+  // Phase bar
+  const bar = document.getElementById('phase-bar');
+  bar.innerHTML = phases.map((p, i) => `<div class="phase-dot ${i < idx ? 'done' : i === idx ? 'active' : ''}"></div>`).join('');
+
+  // Alert
+  const alert = document.getElementById('alert-banner');
+  alert.style.display = phase.alertVisible ? 'block' : 'none';
+
+  // Buttons
+  document.getElementById('btn-prev').disabled = idx === 0;
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.textContent = phase.isLast ? 'إنهاء الرحلة 🏁' : 'التالي ▶';
+
+  // Scene color shift
+  applySceneColors(phase, idx);
+
+  // Camera gentle move
+  gsapCamera(phase.camTarget);
+
+  // Action prompt
+  actionAnswered = false;
+  if (phase.hasAction) {
+    setTimeout(() => showActionPrompt(phase), 1200);
+  } else {
+    document.getElementById('action-prompt').style.display = 'none';
+    nextBtn.disabled = false;
+  }
+
+  if (!phase.hasAction) nextBtn.disabled = false;
+}
+
+function applySceneColors(phase, idx) {
+  const col = new THREE.Color(phase.color);
+  const colDim = col.clone().multiplyScalar(0.3);
+
+  // Update node colors
+  particles.forEach(p => {
+    if (p.material) p.material.color.set(col);
+  });
+
+  // Show/hide virus based on phase
+  const showVirus = idx >= 1 && idx <= 2;
+  const virusIntensity = idx === 1 ? 0.7 : idx === 2 ? 1.0 : 0;
+  virusParticles.forEach(v => {
+    v.material.opacity = showVirus ? virusIntensity * 0.8 : 0;
+    v.material.color.set(idx === 3 ? 0x888888 : 0xff2200);
+  });
+
+  // Show/hide firewall
+  const showFirewall = idx >= 3;
+  firewallLines.forEach(f => {
+    f.material.opacity = showFirewall ? 0.4 : 0;
+  });
+
+  // Connections color
+  connections.forEach((c, i) => {
+    if (c.material) {
+      c.material.color.set(col);
+      c.userData.baseOpacity = idx >= 1 && idx <= 2 ? 0.06 : 0.12;
+    }
+  });
+
+  // Background fog color
+  if (idx >= 1 && idx <= 2) {
+    scene.fog.color.set(0x100005);
+  } else if (idx >= 3 && idx <= 4) {
+    scene.fog.color.set(0x000510);
+  } else {
+    scene.fog.color.set(0x000510);
+  }
+}
+
+// Simple camera animation
+let camAnimFrame;
+function gsapCamera(target) {
+  const startZ = camera.position.z;
+  const startX = camera.position.x;
+  const startY = camera.position.y;
+  const tZ = startZ + (target.z - startZ) * 0.3;
+  const tX = startX + (target.x - startX) * 0.3;
+  const tY = startY + (target.y - startY) * 0.3;
+
+  let t = 0;
+  cancelAnimationFrame(camAnimFrame);
+  function step() {
+    t += 0.03;
+    if (t > 1) return;
+    camera.position.z = startZ + (tZ - startZ) * t;
+    camera.position.x = startX + (tX - startX) * t;
+    camera.position.y = startY + (tY - startY) * t;
+    camAnimFrame = requestAnimationFrame(step);
+  }
+  step();
+}
+
+function showActionPrompt(phase) {
+  const prompt = document.getElementById('action-prompt');
+  document.getElementById('btn-next').disabled = true;
+
+  prompt.innerHTML = `
+    <div class="action-title">${phase.actionTitle}</div>
+    <div class="action-sub">${phase.actionSub}</div>
+    <div class="action-choices">
+      ${phase.choices.map((c, i) => `
+        <button class="choice-btn" onclick="answerAction(${i}, ${c.correct}, '${c.feedback}', ${phase.choices.findIndex(x=>x.correct)})">
+          <span class="choice-icon">${c.icon}</span>
+          <span>${c.text}</span>
+        </button>`).join('')}
     </div>`;
+  prompt.style.display = 'block';
 }
 
-function renderLogs() {
-  const el = document.getElementById('logsContent');
-  if (!el) return;
-  const logs = [
-    { level:'error', time:'10:42:31', msg:'Screen SCREEN-04 disconnected — connection timeout' },
-    { level:'warning', time:'10:38:12', msg:'QR scan failed — invalid token format for session #1847' },
-    { level:'warning', time:'10:31:55', msg:'Media file zaid-character.png not found in activity #3' },
-    { level:'info', time:'10:28:04', msg:'Session #1851 started — visitor: سارة محمد, age group: 7-9' },
-    { level:'info', time:'10:27:59', msg:'Certificate printed — Gold badge, session #1850' },
-    { level:'info', time:'10:25:33', msg:'Activity "مغامرة زيد الرقمية" published by editor Fatima' },
-    { level:'info', time:'10:22:17', msg:'New question added to رحلة الاستكشاف الرقمي' },
-    { level:'info', time:'10:18:02', msg:'Deployment completed — version 2.4.1 live on room server' },
-  ];
-  const colors = { error:'var(--red)', warning:'var(--gold)', info:'var(--text3)' };
-  const icons = { error:'✖', warning:'⚠', info:'ℹ' };
-  el.innerHTML = logs.map(l => `
-    <div style="display:flex;gap:10px;align-items:baseline;">
-      <span style="color:${colors[l.level]};flex-shrink:0;">${icons[l.level]}</span>
-      <span style="color:var(--text3);flex-shrink:0;">${l.time}</span>
-      <span style="color:${l.level==='info'?'var(--text2)':colors[l.level]};">${l.msg}</span>
-    </div>`).join('');
-}
+function answerAction(idx, correct, feedback, correctIdx) {
+  if (actionAnswered) return;
+  actionAnswered = true;
 
-function renderTemplateChecklist() {
-  const el = document.getElementById('templateChecklist');
-  if (!el) return;
-  const checks = [
-    { label:'Template name defined', done: true },
-    { label:'Type selected', done: true },
-    { label:'Data schema fields added', done: false },
-    { label:'Game engine code written', done: false },
-    { label:'cyberRoom hooks used', done: false },
-    { label:'Preview tested on all devices', done: false },
-    { label:'Registered in system', done: false },
-  ];
-  el.innerHTML = checks.map(c => `
-    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
-      <span style="color:${c.done?'var(--teal)':'var(--text3)'};">${c.done?'✓':'○'}</span>
-      <span style="font-size:12px;color:${c.done?'var(--text)':'var(--text3)'};">${c.label}</span>
-    </div>`).join('');
-}
-
-function populatePreviewSelect() {
-  const sel = document.getElementById('preview-activity-select');
-  if (!sel) return;
-  activities.forEach((a, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = a.icon + ' ' + a.name + ' (' + a.age + ')';
-    sel.appendChild(opt);
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === correctIdx) {
+      b.style.borderColor = '#00ff99';
+      b.style.background = 'rgba(0,255,153,0.15)';
+      b.style.color = '#00ff99';
+    } else if (i === idx && !correct) {
+      b.style.borderColor = '#ff4444';
+      b.style.background = 'rgba(255,68,68,0.1)';
+      b.style.color = '#ff4444';
+    }
   });
-}
 
-// ===== DEV ACTIONS =====
-let schemaFieldCount = 0;
+  const prompt = document.getElementById('action-prompt');
+  const feedbackDiv = document.createElement('div');
+  feedbackDiv.style.cssText = `margin-top:14px;padding:12px 20px;background:${correct?'rgba(0,255,153,0.1)':'rgba(255,68,68,0.1)'};border:1px solid ${correct?'rgba(0,255,153,0.4)':'rgba(255,68,68,0.4)'};border-radius:12px;font-size:14px;font-weight:700;color:${correct?'#00ff99':'#ff6666'};max-width:500px;margin:14px auto 0;`;
+  feedbackDiv.textContent = (correct ? '✅ ' : '💡 ') + feedback;
+  prompt.appendChild(feedbackDiv);
 
-function addSchemaField() {
-  schemaFieldCount++;
-  const list = document.getElementById('schema-fields');
-  const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;';
-  div.innerHTML = `
-    <input type="text" class="form-input" placeholder="Field name (e.g. questions)" style="flex:2;">
-    <select class="form-select" style="flex:1;">
-      <option>Array</option><option>String</option><option>Number</option><option>Boolean</option><option>Object</option>
-    </select>
-    <select class="form-select" style="flex:1;">
-      <option>Required</option><option>Optional</option>
-    </select>
-    <button class="btn btn-danger" style="padding:6px 10px;" onclick="this.parentElement.remove()">✕</button>`;
-  list.appendChild(div);
-}
-
-function loadBoilerplate() {
-  const type = document.getElementById('tpl-type')?.value || 'quiz';
-  const boilerplates = {
-    quiz: `// Quiz template boilerplate
-const activity = await cyberRoom.getActivity();
-const questions = activity.questions;
-let current = 0, score = 0;
-
-function render() {
-  cyberRoom.setProgress(current + 1, questions.length);
-  const q = questions[current];
-  // TODO: render q.text, q.choices, q.scene_emoji
-}
-
-function answer(idx) {
-  const correct = questions[current].choices[idx].correct;
-  cyberRoom.onAnswer(correct, current);
-  cyberRoom.playSound(correct ? 'correct' : 'wrong');
-  if (correct) score++;
   setTimeout(() => {
-    if (++current >= questions.length) cyberRoom.finish(score);
-    else render();
-  }, 1800);
-}
-
-render();`,
-    story: `// Story template boilerplate
-const activity = await cyberRoom.getActivity();
-const scenes = activity.scenes;
-let current = 0;
-
-function render() {
-  cyberRoom.setProgress(current + 1, scenes.length);
-  const s = scenes[current];
-  // TODO: render s.text, s.question, s.choices, s.emoji1, s.emoji2
-}
-
-function choose(idx) {
-  const correct = scenes[current].choices[idx].correct;
-  cyberRoom.onAnswer(correct, current);
-  cyberRoom.playSound(correct ? 'correct' : 'wrong');
-  // show lesson: scenes[current].lesson, scenes[current].lessonDetail
-  setTimeout(() => {
-    if (++current >= scenes.length) cyberRoom.finish(0);
-    else render();
+    prompt.style.display = 'none';
+    document.getElementById('btn-next').disabled = false;
   }, 2500);
 }
 
-render();`,
-    drag: `// Drag & sort template boilerplate
-const activity = await cyberRoom.getActivity();
-const items = activity.items;      // draggable items
-const zones = activity.zones;     // drop zones
-
-// items: [{ id, label, emoji, correctZone }]
-// zones: [{ id, label, color }]
-
-function onDrop(itemId, zoneId) {
-  const item = items.find(i => i.id === itemId);
-  const correct = item.correctZone === zoneId;
-  cyberRoom.onAnswer(correct, itemId);
-  cyberRoom.playSound(correct ? 'correct' : 'wrong');
-  // TODO: update UI, check if all items placed
-  checkComplete();
+function nextPhase() {
+  if (currentPhase >= phases.length - 1) {
+    showEndScreen();
+    return;
+  }
+  currentPhase++;
+  applyPhase(currentPhase);
 }
 
-function checkComplete() {
-  if (allPlaced()) cyberRoom.finish(score);
-}`,
-    timed: `// Timed decision template boilerplate
-const activity = await cyberRoom.getActivity();
-const scenarios = activity.questions;
-let current = 0;
-
-function loadScenario() {
-  const s = scenarios[current];
-  cyberRoom.setProgress(current + 1, scenarios.length);
-  // TODO: render scenario, start timer
-  cyberRoom.onTimeOut(() => autoAnswer());
+function prevPhase() {
+  if (currentPhase <= 0) return;
+  currentPhase--;
+  applyPhase(currentPhase);
 }
 
-function decide(isSafe) {
-  const correct = scenarios[current].isSafe === isSafe;
-  cyberRoom.onAnswer(correct, current);
-  cyberRoom.playSound(correct ? 'correct' : 'wrong');
-  setTimeout(() => {
-    if (++current >= scenarios.length) cyberRoom.finish(score);
-    else loadScenario();
-  }, 1500);
+function showEndScreen() {
+  cancelAnimationFrame(frameId);
+  document.getElementById('ui-overlay').style.display = 'none';
+  const end = document.getElementById('end-overlay');
+  end.style.display = 'flex';
+  end.style.animation = 'none';
+  confettiEnd();
 }
 
-function autoAnswer() { decide(false); }
-
-loadScenario();`,
-  };
-  const code = boilerplates[type] || boilerplates.quiz;
-  const ta = document.getElementById('tpl-code');
-  if (ta) { ta.value = code; updateBuilderPreview(); }
+function confettiEnd() {
+  const colors = ['#00ff99','#4db8ff','#ffffff','#f5c842'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.cssText = `position:fixed;left:${Math.random()*100}%;top:-10px;width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};animation:confettiFall ${Math.random()*2+1.5}s linear ${Math.random()*0.5}s forwards;z-index:300;pointer-events:none;`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
 }
 
-function updateBuilderPreview() {
-  const type = document.getElementById('tpl-type')?.value || 'quiz';
-  const previewMap = { quiz: buildQuizPreview, story: buildStoryPreview, drag: buildBubblesPreview, timed: buildRadarPreview };
-  const builder = previewMap[type] || buildGenericPreview;
-  const html = builder({ name: document.getElementById('tpl-name')?.value || 'New Template', icon: '🎮', age: 'All', type });
-  const iframe = document.getElementById('builder-preview-iframe');
-  if (iframe) iframe.srcdoc = html;
+// ===== ENTRY POINT =====
+function startExperience() {
+  const overlay = document.getElementById('welcome-overlay');
+  const loadBar = document.getElementById('loading-bar');
+
+  // Fake loading progress
+  let prog = 0;
+  const loadInterval = setInterval(() => {
+    prog += Math.random() * 15 + 5;
+    if (prog >= 100) {
+      prog = 100;
+      clearInterval(loadInterval);
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          loadBar.style.display = 'none';
+          document.getElementById('ui-overlay').style.display = 'block';
+          applyPhase(0);
+        }, 800);
+      }, 300);
+    }
+    loadBar.style.width = prog + '%';
+  }, 80);
+
+  // Init Three.js
+  initThree();
 }
 
-function updateTemplatePreview() { updateBuilderPreview(); renderTemplateChecklist(); }
-
-function setBuilderDevice(mode) {
-  const box = document.getElementById('builder-preview-box');
-  if (!box) return;
-  ['desktop','tablet','kiosk'].forEach(m => {
-    const b = document.getElementById('bpv-'+m);
-    if (b) { b.className = 'btn btn-secondary'; b.style.fontSize = '11px'; b.style.padding = '3px 8px'; }
-  });
-  const btn = document.getElementById('bpv-'+mode);
-  if (btn) { btn.className = 'btn btn-primary'; }
-  if (mode === 'desktop') { box.style.width = '100%'; box.style.height = '340px'; }
-  else if (mode === 'tablet') { box.style.width = '600px'; box.style.height = '400px'; }
-  else { box.style.width = '320px'; box.style.height = '580px'; }
+function restartExperience() {
+  document.getElementById('end-overlay').style.display = 'none';
+  currentPhase = 0;
+  scene.clear();
+  particles = []; connections = []; virusParticles = []; firewallLines = [];
+  buildScene();
+  document.getElementById('ui-overlay').style.display = 'block';
+  frameId = requestAnimationFrame(animate);
+  applyPhase(0);
 }
 
-function saveTemplate() {
-  const name = document.getElementById('tpl-name')?.value?.trim();
-  if (!name) { showToast('Please enter a template name'); return; }
-  showToast('Template "' + name + '" saved!');
-  renderDevTemplates();
-}
-
-function previewTemplate(idx) {
-  const t = gameTemplates[idx];
-  currentPreviewIdx = null;
-  document.getElementById('preview-icon').textContent = t.icon;
-  document.getElementById('preview-modal-title').textContent = t.name + ' template';
-  document.getElementById('preview-modal-sub').textContent = 'Game engine preview';
-  document.getElementById('preview-status').textContent = t.status === 'ready' ? '● Ready' : '● Building';
-  document.getElementById('preview-status').className = 'badge ' + (t.status === 'ready' ? 'badge-green' : 'badge-gold');
-  setPreviewDevice('full');
-  const previewMap = { quiz: buildQuizPreview, story: buildStoryPreview, drag: buildBubblesPreview, timed: buildRadarPreview };
-  const builder = previewMap[t.type] || buildGenericPreview;
-  document.getElementById('preview-iframe').srcdoc = builder({ name: t.name, icon: t.icon, age: 'All', type: t.type });
-  openModal('modal-preview');
-}
-
-function runApiTest() {
-  const method = document.getElementById('api-method')?.value;
-  const url = document.getElementById('api-url')?.value;
-  const body = document.getElementById('api-body')?.value;
-  const resp = document.getElementById('api-response');
-  if (!resp) return;
-  resp.style.display = 'block';
-  resp.textContent = '// Sending ' + method + ' ' + url + '...\n';
-  setTimeout(() => {
-    const mockResponses = {
-      '/api/v1/activities': '{\n  "data": [\n    { "id": 1, "name": "رحلة الاستكشاف الرقمي", "type": "quiz", "age_group": "7-9", "status": "published" },\n    { "id": 2, "name": "مغامرة زيد الرقمية", "type": "story", "age_group": "7-9", "status": "published" }\n  ],\n  "total": 12\n}',
-      '/api/v1/sessions': '{\n  "data": [\n    { "id": 1851, "name": "سارة محمد", "pre_score": 2, "post_score": 5, "badge": "gold" }\n  ]\n}',
-    };
-    const mock = mockResponses[url] || '{\n  "status": 200,\n  "message": "OK",\n  "data": { "id": 1, "created": true }\n}';
-    resp.textContent = '// Response 200 OK\n' + mock;
-  }, 600);
-}
-
-let deployLog = '';
-function runDeploy(action) {
-  const log = document.getElementById('deploy-log');
-  if (!log) return;
-  const msgs = action === 'pull'
-    ? ['$ git pull origin main', 'remote: Enumerating objects...', 'Updating a3f2b1c..e7d9f4a', 'Fast-forward', ' src/templates/quiz.js | 12 +++--', '✓ Up to date']
-    : ['$ npm run build', 'Building assets...', '✓ quiz.js 42kb', '✓ story.js 38kb', '$ pm2 restart cyber-room', '✓ cyber-room restarted', '🚀 Deployed successfully — v2.4.2'];
-  let i = 0;
-  const interval = setInterval(() => {
-    if (i >= msgs.length) { clearInterval(interval); return; }
-    deployLog += '<span style="color:' + (msgs[i].startsWith('✓')||msgs[i].startsWith('🚀')?'var(--teal)':msgs[i].startsWith('$')?'#9FE1CB':'var(--text3)') + ';">' + msgs[i] + '</span>\n';
-    log.innerHTML = deployLog;
-    i++;
-  }, 400);
-}
-
-function clearLog() {
-  deployLog = '';
-  const log = document.getElementById('deploy-log');
-  if (log) log.innerHTML = '';
-}
-
-function loadDevPreview() {
-  const sel = document.getElementById('preview-activity-select');
-  const idx = parseInt(sel?.value);
-  if (isNaN(idx)) return;
-  const a = activities[idx];
-  const builder = activityPreviews[a.name];
-  const html = builder ? builder(a) : buildGenericPreview(a);
-  const iframe = document.getElementById('dev-preview-iframe');
-  if (iframe) iframe.srcdoc = html;
-}
-
-function setDevPreviewDevice(mode) {
-  const box = document.getElementById('dev-preview-box');
-  if (!box) return;
-  ['desktop','tablet','kiosk'].forEach(m => {
-    const b = document.getElementById('dpv-'+m);
-    if (b) { b.className = 'btn btn-secondary'; }
-  });
-  const btn = document.getElementById('dpv-'+mode);
-  if (btn) btn.className = 'btn btn-primary';
-  if (mode === 'desktop') { box.style.width = '100%'; box.style.height = '100%'; }
-  else if (mode === 'tablet') { box.style.width = '768px'; box.style.height = '560px'; }
-  else { box.style.width = '430px'; box.style.height = '780px'; }
-}
-
-// ===== DEV PAGE RENDER ON NAV =====
-const _devRenders = {
-  'dev-templates': renderDevTemplates,
-  'dev-api': () => { renderApiEndpoints(); },
-  'dev-components': renderComponents,
-  'dev-hooks': renderHooks,
-  'dev-screens': renderScreens,
-  'dev-deploy': renderDeploySteps,
-  'dev-logs': renderLogs,
-  'dev-builder': () => { renderTemplateChecklist(); updateBuilderPreview(); },
-  'dev-preview': populatePreviewSelect,
-};
+// Confetti keyframe
+const style = document.createElement('style');
+style.textContent = `@keyframes confettiFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>
