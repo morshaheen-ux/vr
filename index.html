@@ -1,970 +1,869 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>رحلة داخل الحاسوب</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>مركز إدارة الأزمات السيبرانية — VR | NCSA</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  font-family: 'Tajawal', sans-serif;
-  background: #000;
-  color: #00ff99;
-  overflow: hidden;
-  width: 100vw; height: 100vh;
-  direction: rtl;
-  user-select: none;
+:root{
+  --bg:#020A16;--surface:#071628;--panel:rgba(5,14,28,.92);
+  --blue:#38B6FF;--teal:#00E5A0;--gold:#C9A84C;
+  --red:#FF4455;--purple:#A78BFA;--warn:#FFD166;
+  --border:rgba(56,182,255,.15);--text:#E8F0FF;--muted:rgba(232,240,255,.4);
+  --ff:'Tajawal',system-ui,sans-serif;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--ff);color:var(--text)}
+canvas{position:fixed;inset:0;display:block}
 
-#canvas-container {
-  position: fixed; inset: 0;
-  cursor: grab;
+/* ── INTRO ── */
+#intro{
+  position:fixed;inset:0;z-index:300;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:24px;transition:opacity .7s;
 }
-#canvas-container:active { cursor: grabbing; }
-
-canvas { display: block; }
-
-/* ===== OVERLAY UI ===== */
-#ui-overlay {
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 20;
+#intro.out{opacity:0;pointer-events:none}
+.i-logo{width:72px;height:72px;margin-bottom:20px}
+.i-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,68,85,.1);border:1px solid rgba(255,68,85,.25);
+  border-radius:20px;padding:5px 16px;font-size:12px;color:var(--red);margin-bottom:18px;
 }
-
-/* Top HUD */
-.hud-top {
-  position: absolute; top: 0; left: 0; right: 0;
-  padding: 16px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+#intro h1{font-size:clamp(26px,5vw,48px);font-weight:900;line-height:1.15;margin-bottom:10px}
+#intro h1 em{color:var(--red);font-style:normal}
+#intro p{font-size:14px;color:var(--muted);max-width:500px;line-height:1.8;margin-bottom:28px}
+.i-roles{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:28px}
+.i-role{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:12px 18px;font-size:13px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
 }
-
-.hud-title {
-  font-size: clamp(14px, 3vw, 20px);
-  font-weight: 900;
-  color: #00ff99;
-  text-shadow: 0 0 20px rgba(0,255,153,0.8);
-  letter-spacing: 1px;
+.i-role span:first-child{font-size:24px}
+.i-role strong{color:var(--text);font-size:13px}
+.i-role small{color:var(--muted);font-size:11px}
+.go-btn{
+  background:var(--red);color:#fff;border:none;border-radius:12px;
+  padding:14px 44px;font-family:var(--ff);font-size:16px;font-weight:700;cursor:pointer;
+  transition:all .2s;letter-spacing:.02em;
 }
+.go-btn:hover{background:#FF6677;transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,68,85,.3)}
 
-.hud-phase {
-  font-size: clamp(11px, 2vw, 14px);
-  color: rgba(0,255,153,0.6);
-  font-weight: 700;
+/* ── HUD ── */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:56px;background:linear-gradient(180deg,rgba(2,10,22,.95) 0%,transparent 100%);
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+  opacity:0;transition:opacity .5s;pointer-events:none;
 }
-
-.hud-controls {
-  font-size: 11px;
-  color: rgba(0,255,153,0.4);
-  text-align: left;
-  direction: ltr;
-  line-height: 1.6;
+#hud.on{opacity:1;pointer-events:auto}
+.hud-left{display:flex;align-items:center;gap:10px}
+.hud-logo svg{width:32px;height:32px}
+.hud-logo-txt{font-size:11px;color:var(--gold);font-weight:700}
+.hud-logo-sub{font-size:9px;color:var(--muted)}
+.hud-phase{
+  background:rgba(255,68,85,.12);border:1px solid rgba(255,68,85,.25);
+  border-radius:20px;padding:3px 12px;font-size:11px;color:var(--red);
 }
-
-/* Bottom HUD */
-.hud-bottom {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 16px 20px;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+.hud-right{display:flex;align-items:center;gap:12px}
+.hud-timer{
+  font-size:20px;font-weight:900;color:var(--warn);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;
 }
-
-.phase-bar {
-  display: flex; gap: 6px;
-  justify-content: center;
-  margin-bottom: 10px;
+.hud-timer.danger{color:var(--red);animation:blink .5s infinite}
+@keyframes blink{50%{opacity:.4}}
+.hud-score{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:4px 14px;font-size:12px;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
 }
+.hud-score b{color:var(--warn);font-size:15px}
 
-.phase-dot {
-  width: 28px; height: 4px;
-  border-radius: 2px;
-  background: rgba(0,255,153,0.2);
-  transition: background 0.4s;
+/* ── CROSSHAIR ── */
+#xhair{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:18px;height:18px;pointer-events:none;z-index:90;
+  opacity:0;transition:opacity .4s;
 }
-.phase-dot.active { background: #00ff99; box-shadow: 0 0 8px rgba(0,255,153,0.8); }
-.phase-dot.done { background: rgba(0,255,153,0.5); }
-
-.narrative-box {
-  text-align: center;
-  max-width: 700px;
-  margin: 0 auto;
+#xhair.on{opacity:.55}
+#xhair::before,#xhair::after{content:'';position:absolute;background:rgba(56,182,255,.85)}
+#xhair::before{width:1px;height:100%;left:50%;top:0}
+#xhair::after{width:100%;height:1px;top:50%;left:0}
+#gaze-svg{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);
+  width:42px;height:42px;pointer-events:none;z-index:89;opacity:0;transition:opacity .4s;
 }
+#gaze-svg.on{opacity:1}
+#gaze-arc{fill:none;stroke:var(--blue);stroke-width:2.5;stroke-dasharray:126;stroke-dashoffset:126;stroke-linecap:round}
 
-.narrative-phase-label {
-  font-size: 11px;
-  color: rgba(0,255,153,0.5);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 4px;
+/* ── ENV LABEL ── */
+#env-lbl{
+  position:fixed;top:64px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.55);border:1px solid var(--border);
+  border-radius:20px;padding:4px 16px;font-size:11px;color:var(--blue);
+  opacity:0;transition:opacity .5s;pointer-events:none;z-index:99;
 }
+#env-lbl.on{opacity:1}
 
-.narrative-text {
-  font-size: clamp(14px, 3vw, 18px);
-  font-weight: 700;
-  color: #e8f4fd;
-  line-height: 1.6;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-  animation: fadeInUp 0.5s ease;
+/* ── HOTSPOT LABEL ── */
+#hs-lbl{
+  position:fixed;bottom:0;left:0;right:0;
+  text-align:center;padding-bottom:calc(var(--panel-h,240px) + 8px);
+  font-size:12px;color:var(--warn);
+  opacity:0;transition:opacity .2s;pointer-events:none;z-index:91;
 }
+#hs-lbl.on{opacity:1}
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── BOTTOM PANEL ── */
+#panel{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--panel);backdrop-filter:blur(18px);
+  border-top:1px solid var(--border);
+  padding:18px 24px 20px;
+  transform:translateY(100%);transition:transform .45s cubic-bezier(.4,0,.2,1);
 }
-
-.nav-buttons {
-  display: flex; gap: 10px;
-  justify-content: center;
-  margin-top: 12px;
-  pointer-events: all;
+#panel.on{transform:translateY(0)}
+.panel-tag{font-size:11px;color:var(--red);letter-spacing:.08em;margin-bottom:5px}
+.panel-hl{font-size:18px;font-weight:700;line-height:1.35;margin-bottom:14px}
+.panel-hl em{color:var(--blue);font-style:normal}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:12px}
+.ch{
+  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:11px 14px;cursor:pointer;
+  font-family:var(--ff);font-size:12px;color:var(--text);
+  display:flex;align-items:flex-start;gap:8px;transition:all .15s;text-align:right;
 }
-
-.nav-btn {
-  background: rgba(0,255,153,0.1);
-  border: 1px solid rgba(0,255,153,0.4);
-  border-radius: 50px;
-  padding: 10px 28px;
-  font-size: 14px; font-weight: 700;
-  font-family: 'Tajawal', sans-serif;
-  color: #00ff99;
-  cursor: pointer;
-  transition: all 0.2s;
+.ch:hover{background:rgba(56,182,255,.1);border-color:var(--blue)}
+.ch.ok  {background:rgba(0,229,160,.1);border-color:var(--teal);color:var(--teal)}
+.ch.bad {background:rgba(255,68,85,.08);border-color:var(--red);color:#FF8090}
+.ch.off {pointer-events:none;opacity:.35}
+.ch-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+#fb{
+  border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.65;
+  display:none;margin-bottom:10px;
 }
-
-.nav-btn:hover {
-  background: rgba(0,255,153,0.2);
-  box-shadow: 0 0 20px rgba(0,255,153,0.3);
-  transform: translateY(-2px);
+#fb.on.ok {display:block;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.22);color:var(--teal)}
+#fb.on.bad{display:block;background:rgba(255,68,85,.08);border:1px solid rgba(255,68,85,.2);color:#FF8090}
+.pfoot{display:flex;align-items:center;justify-content:space-between}
+.pscore{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:4px 14px;font-size:12px;color:var(--muted);
+  display:flex;align-items:center;gap:5px;
 }
-
-.nav-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
-
-.nav-btn.primary {
-  background: #00ff99;
-  color: #000;
-  font-weight: 900;
+.pscore b{color:var(--warn);font-size:15px}
+.nxt{
+  background:var(--blue);color:#020A16;border:none;border-radius:8px;
+  padding:9px 22px;font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;
+  transition:all .15s;
 }
-.nav-btn.primary:hover { background: #00cc7a; box-shadow: 0 0 30px rgba(0,255,153,0.5); }
+.nxt:hover:not(:disabled){background:#5CC8FF;transform:translateY(-1px)}
+.nxt:disabled{opacity:.2;cursor:default;transform:none}
 
-/* Alert banner */
-.alert-banner {
-  position: absolute; top: 70px; left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255,50,50,0.15);
-  border: 1px solid rgba(255,50,50,0.6);
-  border-radius: 12px;
-  padding: 10px 24px;
-  font-size: 14px; font-weight: 700;
-  color: #ff4444;
-  text-shadow: 0 0 10px rgba(255,50,50,0.5);
-  animation: alertPulse 1s ease-in-out infinite, fadeInUp 0.3s ease;
-  white-space: nowrap;
-  display: none;
+/* ── RESULT ── */
+#result{
+  position:fixed;inset:0;z-index:200;background:rgba(2,10,22,.97);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:32px;
 }
+#result.on{display:flex}
+.r-medal{font-size:68px;margin-bottom:12px}
+.r-title{font-size:26px;font-weight:900;margin-bottom:6px}
+.r-sub{font-size:14px;color:var(--muted);margin-bottom:24px}
+.r-ring{width:130px;height:130px;margin-bottom:22px}
+.r-bars{width:100%;max-width:400px;display:grid;gap:8px;margin-bottom:24px;text-align:right}
+.rrow{display:flex;align-items:center;gap:10px;direction:rtl}
+.rlbl{font-size:12px;color:var(--muted);width:130px;flex-shrink:0}
+.rtrk{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.rfil{height:100%;border-radius:3px;transition:width 1.3s ease}
+.r-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.rbtn{border-radius:10px;padding:11px 24px;font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.rbtn.p{background:var(--red);color:#fff;border:none}
+.rbtn.p:hover{background:#FF6677}
+.rbtn.g{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--text)}
+.rbtn.g:hover{background:rgba(255,255,255,.07)}
 
-@keyframes alertPulse {
-  0%,100% { box-shadow: 0 0 10px rgba(255,50,50,0.2); }
-  50% { box-shadow: 0 0 30px rgba(255,50,50,0.5); }
+/* ── ROLE BADGE (floating) ── */
+#role-badge{
+  position:fixed;top:64px;right:18px;z-index:99;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:8px 14px;
+  opacity:0;transition:opacity .5s;pointer-events:none;
 }
+#role-badge.on{opacity:1}
+.rb-label{font-size:9px;color:var(--muted);letter-spacing:.06em;margin-bottom:3px}
+.rb-role{font-size:12px;font-weight:700}
 
-/* Action prompt */
-.action-prompt {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  pointer-events: all;
-  animation: fadeInUp 0.4s ease;
+/* ── LOOK HINT ── */
+#look-hint{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;color:var(--muted);font-size:14px;z-index:95;
+  opacity:0;transition:opacity .6s;pointer-events:none;
 }
+#look-hint.on{opacity:1}
+#look-hint span{display:block;font-size:28px;margin-bottom:8px;animation:orb 3s ease-in-out infinite}
+@keyframes orb{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
-.action-title {
-  font-size: clamp(20px, 4vw, 32px);
-  font-weight: 900;
-  color: #fff;
-  text-shadow: 0 0 30px rgba(0,255,153,0.6);
-  margin-bottom: 8px;
+/* ── PHASE PROGRESS BAR ── */
+#phase-bar{
+  position:fixed;bottom:0;left:0;right:0;height:3px;z-index:101;
+  background:rgba(255,255,255,.07);
 }
+#phase-fill{height:100%;background:var(--red);transition:width .4s ease;width:0%}
 
-.action-sub {
-  font-size: clamp(13px, 2.5vw, 16px);
-  color: rgba(232,244,253,0.7);
-  margin-bottom: 20px;
-  line-height: 1.6;
-}
-
-.action-choices {
-  display: flex; gap: 12px; flex-wrap: wrap;
-  justify-content: center;
-}
-
-.choice-btn {
-  background: rgba(0,255,153,0.08);
-  border: 2px solid rgba(0,255,153,0.3);
-  border-radius: 16px;
-  padding: 16px 28px;
-  font-size: 15px; font-weight: 700;
-  font-family: 'Tajawal', sans-serif;
-  color: #00ff99;
-  cursor: pointer;
-  transition: all 0.25s;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 6px;
-}
-.choice-btn:hover {
-  background: rgba(0,255,153,0.15);
-  border-color: #00ff99;
-  transform: translateY(-3px);
-  box-shadow: 0 0 30px rgba(0,255,153,0.2);
-}
-.choice-btn .choice-icon { font-size: 28px; }
-
-/* Welcome screen overlay */
-#welcome-overlay {
-  position: fixed; inset: 0;
-  background: radial-gradient(ellipse at center, #050c1a 0%, #000 100%);
-  z-index: 100;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 24px; text-align: center; padding: 20px;
-  transition: opacity 0.8s ease;
-}
-
-.vr-icon {
-  font-size: 80px;
-  animation: float 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 30px rgba(0,255,153,0.6));
-}
-@keyframes float {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-}
-
-.vr-title {
-  font-size: clamp(28px, 6vw, 52px);
-  font-weight: 900;
-  line-height: 1.2;
-  text-shadow: 0 0 40px rgba(0,255,153,0.5);
-}
-.vr-title span { color: #00ff99; }
-
-.vr-sub {
-  font-size: clamp(14px, 3vw, 18px);
-  color: rgba(232,244,253,0.6);
-  max-width: 500px; line-height: 1.7;
-}
-
-.vr-tips {
-  display: flex; gap: 12px; flex-wrap: wrap;
-  justify-content: center;
-}
-
-.vr-tip {
-  background: rgba(0,255,153,0.08);
-  border: 1px solid rgba(0,255,153,0.2);
-  border-radius: 50px;
-  padding: 6px 16px;
-  font-size: 12px; font-weight: 600;
-  color: rgba(0,255,153,0.7);
-}
-
-.start-vr-btn {
-  background: linear-gradient(135deg, #00ff99, #00cc7a);
-  border: none; border-radius: 50px;
-  padding: 18px 56px;
-  font-size: 20px; font-weight: 900;
-  font-family: 'Tajawal', sans-serif;
-  color: #000; cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 0 40px rgba(0,255,153,0.4);
-  letter-spacing: 0.5px;
-}
-.start-vr-btn:hover { transform: translateY(-3px); box-shadow: 0 0 60px rgba(0,255,153,0.6); }
-
-/* End screen */
-#end-overlay {
-  position: fixed; inset: 0;
-  background: radial-gradient(ellipse at center, #050c1a 0%, #000 100%);
-  z-index: 100;
-  display: none;
-  flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 20px; text-align: center; padding: 20px;
-}
-
-.end-icon { font-size: 80px; animation: float 2s ease-in-out infinite; }
-.end-title { font-size: clamp(26px, 5vw, 44px); font-weight: 900; color: #00ff99; text-shadow: 0 0 30px rgba(0,255,153,0.5); }
-.end-sub { font-size: clamp(14px, 2.5vw, 18px); color: rgba(232,244,253,0.7); max-width: 500px; line-height: 1.7; }
-
-.lessons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
-  width: 100%; max-width: 700px;
-}
-
-.lesson-item {
-  background: rgba(0,255,153,0.06);
-  border: 1px solid rgba(0,255,153,0.2);
-  border-radius: 14px;
-  padding: 14px;
-  text-align: right;
-  animation: fadeInUp 0.5s ease both;
-}
-
-.lesson-item-icon { font-size: 24px; margin-bottom: 6px; }
-.lesson-item-text { font-size: 13px; font-weight: 600; line-height: 1.5; color: rgba(232,244,253,0.85); }
-
-/* Loading bar */
-#loading-bar {
-  position: fixed; bottom: 0; left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #00ff99, #4db8ff);
-  transition: width 0.3s ease;
-  z-index: 200;
-  box-shadow: 0 0 10px rgba(0,255,153,0.8);
-}
-
-/* Mobile joystick hint */
-.mobile-hint {
-  display: none;
-  position: absolute; bottom: 130px; left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px; color: rgba(0,255,153,0.4);
-  text-align: center;
-}
-
-@media (pointer: coarse) {
-  .mobile-hint { display: block; }
-  .hud-controls { display: none; }
+/* ── RESPONSIVE ── */
+@media(max-width:580px){
+  .choices{grid-template-columns:1fr}
+  .panel-hl{font-size:15px}
+  #panel{padding:14px 16px 18px}
+  #intro h1{font-size:24px}
+  .i-roles{flex-direction:column;align-items:center}
 }
 </style>
 </head>
 <body>
 
-<!-- Loading bar -->
-<div id="loading-bar" style="width:0%"></div>
-
-<!-- Welcome overlay -->
-<div id="welcome-overlay">
-  <div class="vr-icon">🖥️</div>
-  <h1 class="vr-title">رحلة <span>داخل</span> الحاسوب</h1>
-  <p class="vr-sub">استعد للدخول إلى العالم الرقمي من الداخل — شاهد كيف تحدث الهجمات السيبرانية وكيف نتصدى لها</p>
-  <div class="vr-tips">
-    <span class="vr-tip">🖱️ اسحب للنظر حولك</span>
-    <span class="vr-tip">📱 حرّك الشاشة باللمس</span>
-    <span class="vr-tip">⌨️ WASD للتحرك</span>
-    <span class="vr-tip">🎮 تجربة تفاعلية كاملة</span>
+<!-- ══ INTRO ══ -->
+<div id="intro">
+  <svg class="i-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="95" fill="#071628" stroke="rgba(255,68,85,0.3)" stroke-width="1.5"/>
+    <path d="M100 28C132 28,168 54,173 92C178 124,157 153,130 163C115 170,100 170,84 163C57 153,36 124,41 92C46 54,68 28,100 28Z" fill="none" stroke="#FF4455" stroke-width="2" opacity=".7"/>
+    <path d="M100 44L140 68L140 117L100 141L60 117L60 68Z" fill="none" stroke="#C9A84C" stroke-width="2"/>
+    <circle cx="100" cy="96" r="20" fill="none" stroke="#FF4455" stroke-width="2" opacity=".8"/>
+    <path d="M90 96L98 104L116 82" stroke="#00E5A0" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M100 76L100 58M100 114L100 132M80 96L62 96M120 96L138 96" stroke="#FF4455" stroke-width="1.5" opacity=".4"/>
+  </svg>
+  <div class="i-badge">🚨 محاكاة طوارئ سيبرانية حية</div>
+  <h1>مركز إدارة<br><em>الأزمات السيبرانية</em></h1>
+  <p>هجوم موزع يضرب البنية التحتية الوطنية — ثلاثة أدوار، عداد حقيقي، قرارات تحت الضغط. هل أنت مستعد؟</p>
+  <div class="i-roles">
+    <div class="i-role">
+      <span>🔬</span>
+      <strong>محلل التهديدات</strong>
+      <small>حدد نوع الهجوم</small>
+    </div>
+    <div class="i-role">
+      <span>⚡</span>
+      <strong>منسق القرارات</strong>
+      <small>رتّب خطوات الإنقاذ</small>
+    </div>
+    <div class="i-role">
+      <span>📡</span>
+      <strong>مسؤول التواصل</strong>
+      <small>اختر الرسائل الصحيحة</small>
+    </div>
   </div>
-  <button class="start-vr-btn" onclick="startExperience()">ادخل إلى الحاسوب 🚀</button>
+  <button class="go-btn" id="startBtn">🚨 ابدأ الأزمة</button>
 </div>
 
-<!-- 3D Canvas -->
-<div id="canvas-container"></div>
-
-<!-- End overlay -->
-<div id="end-overlay">
-  <div class="end-icon">🛡️</div>
-  <h2 class="end-title">لقد أنقذت الحاسوب! 🎉</h2>
-  <p class="end-sub">تعلّمت كيف تعمل الهجمات السيبرانية من الداخل وكيف تتصدى لها بأدوات الحماية الصحيحة</p>
-
-  <div class="lessons-grid">
-    <div class="lesson-item" style="animation-delay:.1s">
-      <div class="lesson-item-icon">🦠</div>
-      <div class="lesson-item-text">البرمجيات الخبيثة تدخل عبر روابط مشبوهة وملفات غير موثوقة</div>
+<!-- ══ HUD ══ -->
+<div id="hud">
+  <div class="hud-left">
+    <div class="hud-logo">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="95" fill="#071628" stroke="rgba(255,68,85,.2)" stroke-width="1"/>
+        <path d="M100 44L140 68L140 117L100 141L60 117L60 68Z" fill="none" stroke="#C9A84C" stroke-width="2"/>
+        <circle cx="100" cy="96" r="18" fill="none" stroke="#FF4455" stroke-width="2"/>
+        <path d="M90 96L98 104L116 82" stroke="#00E5A0" stroke-width="3" stroke-linecap="round" fill="none"/>
+      </svg>
+      <div>
+        <div class="hud-logo-txt">الوكالة الوطنية للأمن السيبراني</div>
+        <div class="hud-logo-sub">مركز إدارة الأزمات — VR</div>
+      </div>
     </div>
-    <div class="lesson-item" style="animation-delay:.2s">
-      <div class="lesson-item-icon">🔥</div>
-      <div class="lesson-item-text">جدار الحماية يوقف الاتصالات غير المصرح بها فور اكتشافها</div>
-    </div>
-    <div class="lesson-item" style="animation-delay:.3s">
-      <div class="lesson-item-icon">🔍</div>
-      <div class="lesson-item-text">برامج مكافحة الفيروسات تفحص وتحذف الملفات الضارة</div>
-    </div>
-    <div class="lesson-item" style="animation-delay:.4s">
-      <div class="lesson-item-icon">🔑</div>
-      <div class="lesson-item-text">كلمة المرور القوية هي الخط الأول للدفاع عن حساباتك</div>
-    </div>
+    <div class="hud-phase" id="hudPhase">المرحلة ١</div>
   </div>
-
-  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-    <button class="start-vr-btn" onclick="restartExperience()">العب مجدداً 🔄</button>
-    <button class="nav-btn" onclick="window.close()">إنهاء</button>
-  </div>
-</div>
-
-<!-- Main UI overlay -->
-<div id="ui-overlay" style="display:none;">
-  <div class="hud-top">
-    <div>
-      <div class="hud-title">🖥️ داخل الحاسوب</div>
-      <div class="hud-phase" id="hud-phase">المرحلة 1: الدخول</div>
-    </div>
-    <div class="hud-controls">
-      Mouse drag: look around<br>
-      WASD / Arrow keys: move<br>
-      Touch: swipe to look
-    </div>
-  </div>
-
-  <div class="alert-banner" id="alert-banner">⚠️ تحذير: تم اكتشاف برمجية خبيثة!</div>
-
-  <!-- Action prompt (shown at key moments) -->
-  <div class="action-prompt" id="action-prompt" style="display:none;"></div>
-
-  <div class="mobile-hint">اسحب للنظر حولك</div>
-
-  <div class="hud-bottom">
-    <div class="phase-bar" id="phase-bar"></div>
-    <div class="narrative-box">
-      <div class="narrative-phase-label" id="narrative-label">المرحلة الأولى</div>
-      <div class="narrative-text" id="narrative-text">مرحباً بك داخل الحاسوب...</div>
-    </div>
-    <div class="nav-buttons">
-      <button class="nav-btn" id="btn-prev" onclick="prevPhase()" disabled>◀ السابق</button>
-      <button class="nav-btn primary" id="btn-next" onclick="nextPhase()">التالي ▶</button>
-    </div>
+  <div class="hud-right">
+    <div class="hud-timer" id="hudTimer">08:45</div>
+    <div class="hud-score">النقاط: <b id="hudScore">0</b></div>
   </div>
 </div>
 
-<!-- Three.js -->
+<!-- ══ ENV LABEL ══ -->
+<div id="env-lbl"></div>
+
+<!-- ══ ROLE BADGE ══ -->
+<div id="role-badge">
+  <div class="rb-label">دورك الحالي</div>
+  <div class="rb-role" id="rbRole"></div>
+</div>
+
+<!-- ══ CROSSHAIR / GAZE ══ -->
+<svg id="gaze-svg" viewBox="0 0 42 42"><circle id="gaze-arc" cx="21" cy="21" r="20"/></svg>
+<div id="xhair"></div>
+
+<!-- ══ LOOK HINT ══ -->
+<div id="look-hint">
+  <span>🎯</span>
+  انظر إلى نقطة الطوارئ الحمراء واضغط عليها
+</div>
+
+<!-- ══ HOTSPOT LABEL ══ -->
+<div id="hs-lbl"></div>
+
+<!-- ══ CANVAS ══ -->
+<canvas id="c"></canvas>
+
+<!-- ══ BOTTOM PANEL ══ -->
+<div id="panel">
+  <div class="panel-tag" id="ptag"></div>
+  <div class="panel-hl" id="phl"></div>
+  <div class="choices" id="pchoices"></div>
+  <div id="fb"></div>
+  <div class="pfoot">
+    <div class="pscore">النقاط: <b id="pscore">0</b></div>
+    <button class="nxt" id="nxtBtn" disabled onclick="advance()">التالي ←</button>
+  </div>
+</div>
+
+<!-- ══ PHASE BAR ══ -->
+<div id="phase-bar"><div id="phase-fill"></div></div>
+
+<!-- ══ RESULT ══ -->
+<div id="result">
+  <div class="r-medal" id="rMedal"></div>
+  <div class="r-title" id="rTitle"></div>
+  <div class="r-sub"   id="rSub"></div>
+  <svg class="r-ring" viewBox="0 0 130 130">
+    <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10"/>
+    <circle id="rArc" cx="65" cy="65" r="55" fill="none" stroke="#FF4455" stroke-width="10"
+            stroke-linecap="round" stroke-dasharray="345" stroke-dashoffset="345"
+            transform="rotate(-90 65 65)" style="transition:stroke-dashoffset 1.4s ease"/>
+    <text x="65" y="60" text-anchor="middle" font-family="Tajawal,sans-serif" font-size="24" font-weight="700" fill="#FFD166" id="rNum">0</text>
+    <text x="65" y="78" text-anchor="middle" font-family="Tajawal,sans-serif" font-size="11" fill="rgba(255,255,255,.38)">من ١٠٠</text>
+  </svg>
+  <div class="r-bars" id="rBars"></div>
+  <div class="r-actions">
+    <button class="rbtn p" onclick="restart()">🔄 إعادة الأزمة</button>
+    <button class="rbtn g" onclick="location.reload()">🏠 الرئيسية</button>
+  </div>
+</div>
+
+<!-- ══ THREE.JS r128 ══ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
 <script>
-// ===== PHASES DATA =====
-const phases = [
+/* ══════════════════════════════════════════
+   CRISIS STAGES DATA
+══════════════════════════════════════════ */
+var STAGES = [
   {
-    id: 'welcome',
-    label: 'الدخول إلى الحاسوب',
-    narrative: 'أنت الآن داخل الحاسوب! هذه هي شبكة البيانات — أنابيب ضوئية تنقل المعلومات بسرعة الضوء. كل نقطة ضوء هي بيانات تنتقل بين المكونات.',
-    color: 0x00ff99,
-    alertVisible: false,
-    hasAction: false,
-    camTarget: { x: 0, y: 0, z: 5 }
-  },
-  {
-    id: 'malware_enter',
-    label: 'دخول البرمجية الخبيثة',
-    narrative: 'تحذير! برمجية خبيثة دخلت عبر رابط مشبوه ضغط عليه المستخدم. انظر إلى اليمين — الجسيمات الحمراء هي الفيروس يتكاثر في الشبكة!',
-    color: 0xff4444,
-    alertVisible: true,
-    hasAction: false,
-    camTarget: { x: 8, y: 2, z: 3 }
-  },
-  {
-    id: 'breach',
-    label: 'اختراق النظام',
-    narrative: 'الفيروس يحاول الوصول إلى البيانات الخاصة! يمكنك رؤيته يخترق طبقات الحماية — كل خط أحمر هو اختراق لطبقة أمان.',
-    color: 0xff6600,
-    alertVisible: true,
-    hasAction: true,
-    actionTitle: '⚠️ الفيروس يخترق النظام!',
-    actionSub: 'ماذا يجب أن يفعل النظام أولاً؟',
+    phase:     'المرحلة ١ من ٥',
+    role:      '🔬 محلل التهديدات',
+    roleShort: 'محلل التهديدات',
+    env:       '🔴 شبكة تحت الهجوم',
+    envColor:  0x0A0005,
+    gridCol:   0x2A0010,
+    nodeCol:   0xFF4455,
+    hl:        '🔴 الرادار رصد اختراقاً نشطاً\nحدد <em>نوع الهجوم الأساسي</em> بناءً على الأدلة',
+    hsLabel:   '🚨 انقر — تحليل الأدلة',
     choices: [
-      { icon: '🔌', text: 'عزل الشبكة', correct: true, feedback: 'ممتاز! عزل الشبكة يوقف انتشار الفيروس فوراً' },
-      { icon: '🗑️', text: 'حذف الملفات', correct: false, feedback: 'ليس الأفضل — الحذف لا يوقف الانتشار أولاً' },
-      { icon: '🔄', text: 'إعادة التشغيل', correct: false, feedback: 'خاطئ — إعادة التشغيل قد تنشّط الفيروس أكثر' }
+      { t:'فيروس فدية — الملفات تُشفَّر تلقائياً ورسائل دفع تظهر',  e:'🔒', ok:true  },
+      { t:'هجوم DDoS — إغراق الخوادم بطلبات وهمية',                 e:'🌊', ok:false },
+      { t:'تسريب بيانات — ملفات تُرفع لخوادم خارجية',               e:'💾', ok:false },
+      { t:'تصيد احتيالي — رسائل مزيفة لسرقة بيانات الدخول',         e:'🎣', ok:false }
     ],
-    camTarget: { x: -5, y: 3, z: 4 }
+    fb:{
+      ok:'✅ تشخيص دقيق! أدلة التشفير التلقائي + رسائل الفدية = Ransomware بنسبة ٩٨٪. انتقل فوراً لمرحلة الاحتواء قبل انتشاره.',
+      err:'❌ الأدلة الصحيحة: تشفير الملفات + رسائل دفع العملة الرقمية = فيروس فدية Ransomware. التشخيص الخاطئ يضيع وقتاً ثميناً في الاستجابة.'
+    },
+    skills:['تحليل التهديدات']
   },
   {
-    id: 'firewall',
-    label: 'تفعيل جدار الحماية',
-    narrative: 'جدار الحماية تفعّل! الخطوط الزرقاء الوامضة تمثل جدار الحماية يوقف كل الاتصالات غير المصرح بها. الفيروس لا يستطيع الخروج الآن.',
-    color: 0x4db8ff,
-    alertVisible: false,
-    hasAction: false,
-    camTarget: { x: 0, y: 5, z: 8 }
-  },
-  {
-    id: 'antivirus',
-    label: 'مكافح الفيروسات',
-    narrative: 'برنامج مكافحة الفيروسات يفحص كل الملفات الآن! الجسيمات البيضاء الساطعة هي عوامل الفحص تبحث عن الكود الضار وتحذفه.',
-    color: 0xffffff,
-    alertVisible: false,
-    hasAction: true,
-    actionTitle: '🔍 تم اكتشاف الفيروس!',
-    actionSub: 'ما الخطوة الصحيحة بعد إزالة الفيروس؟',
+    phase:     'المرحلة ٢ من ٥',
+    role:      '⚡ منسق القرارات',
+    roleShort: 'منسق القرارات',
+    env:       '⚡ غرفة العمليات الرئيسية',
+    envColor:  0x050A00,
+    gridCol:   0x0A2000,
+    nodeCol:   0x00E5A0,
+    hl:        '⚡ الوقت المتبقي ينفد\nرتّب <em>خطوات الاستجابة</em> بالأولوية الصحيحة',
+    hsLabel:   '⚡ انقر — إدارة الاستجابة',
     choices: [
-      { icon: '🔑', text: 'تغيير كلمات المرور', correct: true, feedback: 'صحيح! الفيروس ربما سرق كلمات المرور، يجب تغييرها فوراً' },
-      { icon: '😴', text: 'لا شيء، انتهى الأمر', correct: false, feedback: 'خاطئ! يجب التحقق مما سُرق أو تأثر' },
-      { icon: '🎮', text: 'متابعة الاستخدام', correct: false, feedback: 'خاطئ! يجب التأكد من إزالة كل أثر للفيروس أولاً' }
+      { t:'① عزل الأجهزة المصابة فوراً عن الشبكة',              e:'🔌', ok:true  },
+      { t:'② دفع الفدية لاستعادة الملفات بسرعة',                e:'💸', ok:false },
+      { t:'③ إخطار الفريق الفني وإدارة المؤسسة',                e:'📞', ok:true  },
+      { t:'④ استعادة البيانات من النسخ الاحتياطية المعزولة',     e:'💿', ok:true  }
     ],
-    camTarget: { x: 3, y: -2, z: 6 }
+    fb:{
+      ok:'✅ ترتيب احترافي! العزل يوقف الانتشار، الإخطار يحشد الفريق، الاستعادة من نسخ احتياطية معزولة تضمن سلامة البيانات. دفع الفدية لا يُوصى به أبداً.',
+      err:'❌ الخطوات الصحيحة: عزل → إخطار → استعادة من نسخ احتياطية. دفع الفدية لا يضمن استعادة البيانات وقد يجعلك هدفاً مستقبلياً.'
+    },
+    skills:['ترتيب الأولويات']
   },
   {
-    id: 'recovery',
-    label: 'استعادة النظام',
-    narrative: 'النظام يتعافى! البيانات المحذوفة تُستعاد من النسخة الاحتياطية. دائماً احتفظ بنسخة احتياطية — إنها طوق النجاة عند الهجمات.',
-    color: 0x00ff99,
-    alertVisible: false,
-    hasAction: false,
-    camTarget: { x: -3, y: 0, z: 10 }
+    phase:     'المرحلة ٣ من ٥',
+    role:      '📡 مسؤول التواصل',
+    roleShort: 'مسؤول التواصل',
+    env:       '📡 غرفة التواصل الاستراتيجي',
+    envColor:  0x000A14,
+    gridCol:   0x001A2A,
+    nodeCol:   0x38B6FF,
+    hl:        '📡 الجمهور يترقب بياناً\nأيٌّ من هذه الرسائل <em>مناسبة للنشر</em> الآن؟',
+    hsLabel:   '📡 انقر — اختر رسائل النشر',
+    choices: [
+      { t:'"تم رصد حادثة سيبرانية — فرق الاستجابة تعمل وسيُصدر تحديث كل ١٥ دقيقة"', e:'✅', ok:true  },
+      { t:'"الهاكرز اخترقوا كل البنية التحتية — لا أمل في الاسترداد!"',               e:'😱', ok:false },
+      { t:'"كلمة مرور النظام الاحتياطي المؤقت: طارئ@٢٠٢٤"',                          e:'🔑', ok:false },
+      { t:'"نرجو ترشيد الاستخدام الرقمي مؤقتاً ريثما يُستكمل الفحص"',               e:'📋', ok:true  }
+    ],
+    fb:{
+      ok:'✅ تواصل احترافي! الرسائل الصحيحة تُطمئن الجمهور دون إثارة هلع أو تسريب معلومات حساسة. الجدول الزمني للتحديثات يبني الثقة.',
+      err:'❌ الرسائل المناسبة: إخبار بوجود الحادثة + وعد بالتحديث + ترشيد الاستخدام. تسريب كلمات المرور أو إثارة الهلع يُفاقم الأزمة.'
+    },
+    skills:['إدارة التواصل']
   },
   {
-    id: 'protected',
-    label: 'الحماية الكاملة',
-    narrative: '🎉 الحاسوب محمي الآن! كل الأضواء الخضراء تعني: جدار الحماية نشط، مكافح الفيروسات محدّث، كلمات المرور قوية، والنسخ الاحتياطية جاهزة.',
-    color: 0x00ff99,
-    alertVisible: false,
-    hasAction: false,
-    isLast: true,
-    camTarget: { x: 0, y: 0, z: 0 }
+    phase:     'المرحلة ٤ من ٥',
+    role:      '🔬 محلل التهديدات',
+    roleShort: 'محلل التهديدات',
+    env:       '🕵️ مختبر التحقيق الجنائي',
+    envColor:  0x080010,
+    gridCol:   0x180030,
+    nodeCol:   0xA78BFA,
+    hl:        '🕵️ تحقيق — كيف دخل الهجوم؟\nحدد <em>نقطة الدخول الأولى</em> للبرمجية الخبيثة',
+    hsLabel:   '🕵️ انقر — تحقيق الجنائي',
+    choices: [
+      { t:'رسالة بريد إلكتروني مزيفة بمرفق خبيث فتحه أحد الموظفين', e:'📧', ok:true  },
+      { t:'ثغرة في نظام التشغيل لم يُحدَّث منذ ٦ أشهر',            e:'💻', ok:true  },
+      { t:'جدار الحماية كان يعمل بكفاءة طوال الوقت',               e:'🛡️', ok:false },
+      { t:'كلمات المرور كانت قوية على جميع الأجهزة',                e:'🔑', ok:false }
+    ],
+    fb:{
+      ok:'✅ تحقيق دقيق! المرفقات الخبيثة + الثغرات غير المُرقَّعة هما ثنائي الاختراق الكلاسيكي. دائماً: تدريب الموظفين + تحديثات دورية = خط الدفاع الأول.',
+      err:'❌ نقطتا الدخول: مرفق خبيث + ثغرة غير مُحدَّثة. جدار الحماية وكلمات المرور القوية لا تحمي من هذا النوع من الهجمات.'
+    },
+    skills:['التحقيق الجنائي']
+  },
+  {
+    phase:     'المرحلة ٥ من ٥',
+    role:      '⚡ منسق القرارات',
+    roleShort: 'منسق القرارات',
+    env:       '🏁 جلسة ما بعد الأزمة',
+    envColor:  0x000A08,
+    gridCol:   0x001A10,
+    nodeCol:   0xFFD166,
+    hl:        '🏁 الأزمة احتُوِيت — ماذا الآن؟\nاختر <em>إجراءات التحصين</em> لمنع تكرار الهجوم',
+    hsLabel:   '🏁 انقر — خطة التحصين',
+    choices: [
+      { t:'تدريب الموظفين على التعرف على رسائل التصيد الاحتيالي',   e:'🎓', ok:true  },
+      { t:'تفعيل نظام تحديث تلقائي لجميع الأجهزة والتطبيقات',       e:'🔄', ok:true  },
+      { t:'تطبيق المصادقة الثنائية على جميع حسابات المؤسسة',        e:'📱', ok:true  },
+      { t:'الاكتفاء بتغيير كلمات المرور مرة واحدة فقط',             e:'🔑', ok:false }
+    ],
+    fb:{
+      ok:'✅ خطة تحصين ممتازة! التدريب + التحديثات التلقائية + المصادقة الثنائية = ثلاثة دفوعات متكاملة. هذه هي معادلة الأمن السيبراني الحديث.',
+      err:'❌ الإجراءات الثلاثة الصحيحة: تدريب الموظفين + تحديثات تلقائية + مصادقة ثنائية. تغيير كلمة المرور وحده لا يحل المشكلة الجذرية.'
+    },
+    skills:['التحصين المستقبلي']
   }
 ];
 
-// ===== THREE.JS SETUP =====
-let scene, camera, renderer;
-let particles = [], connections = [], virusParticles = [], firewallLines = [];
-let frameId, currentPhase = 0;
-let mouseX = 0, mouseY = 0;
-let targetRotX = 0, targetRotY = 0;
-let isDragging = false, lastX = 0, lastY = 0;
-let touchStartX = 0, touchStartY = 0;
-let actionAnswered = false;
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+var stage=0, score=0, answered=false, results=[];
+var running=false, timerSecs=525, timerInterval=null;
 
-function initThree() {
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000510, 0.035);
+/* ══════════════════════════════════════════
+   THREE.JS
+══════════════════════════════════════════ */
+var renderer,scene,camera,clock;
+var envObjs=[],particles=[],streams=[],hotMesh=null,hotGlow=null;
+var rotX=0,rotY=0,tarX=0,tarY=0;
+var dragging=false,lmx=0,lmy=0;
+var gazeT=0,gazeActive=false;
+var raycaster=new THREE.Raycaster();
+var center=new THREE.Vector2(0,0);
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 0, 15);
-
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000510, 1);
-  document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-  buildScene();
-  setupControls();
-  animate();
-
-  window.addEventListener('resize', onResize);
-}
-
-function buildScene() {
-  // Data nodes
-  const nodeGeo = new THREE.SphereGeometry(0.15, 8, 8);
-  const positions = [];
-  for (let i = 0; i < 80; i++) {
-    const mat = new THREE.MeshBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.8 });
-    const node = new THREE.Mesh(nodeGeo, mat);
-    const x = (Math.random() - 0.5) * 40;
-    const y = (Math.random() - 0.5) * 20;
-    const z = (Math.random() - 0.5) * 40;
-    node.position.set(x, y, z);
-    node.userData = { ox: x, oy: y, oz: z, speed: Math.random() * 0.01 + 0.005, phase: Math.random() * Math.PI * 2 };
-    scene.add(node);
-    particles.push(node);
-    positions.push(new THREE.Vector3(x, y, z));
-  }
-
-  // Connection lines between nearby nodes
-  const lineMat = new THREE.LineBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.12 });
-  for (let i = 0; i < positions.length; i++) {
-    for (let j = i + 1; j < positions.length; j++) {
-      if (positions[i].distanceTo(positions[j]) < 6) {
-        const geo = new THREE.BufferGeometry().setFromPoints([positions[i], positions[j]]);
-        const line = new THREE.Line(geo, lineMat.clone());
-        scene.add(line);
-        connections.push(line);
-      }
-    }
-  }
-
-  // Central data streams (tubes)
-  for (let i = 0; i < 8; i++) {
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, -15),
-      new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*5, 0),
-      new THREE.Vector3((Math.random()-0.5)*20, (Math.random()-0.5)*10, 15),
-    ]);
-    const tubeGeo = new THREE.TubeGeometry(curve, 20, 0.04, 4, false);
-    const tubeMat = new THREE.MeshBasicMaterial({ color: 0x00ff99, transparent: true, opacity: 0.15 });
-    const tube = new THREE.Mesh(tubeGeo, tubeMat);
-    scene.add(tube);
-    connections.push(tube);
-  }
-
-  // Ambient light
-  const ambientLight = new THREE.AmbientLight(0x00ff99, 0.1);
-  scene.add(ambientLight);
-
-  // Central sphere (CPU/core)
-  const coreGeo = new THREE.IcosahedronGeometry(1.5, 2);
-  const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ff99, wireframe: true, transparent: true, opacity: 0.3 });
-  const core = new THREE.Mesh(coreGeo, coreMat);
-  scene.add(core);
-  particles.push(core); // add to animate
-
-  // Grid floor
-  const gridHelper = new THREE.GridHelper(60, 30, 0x00ff99, 0x00ff99);
-  gridHelper.material.transparent = true;
-  gridHelper.material.opacity = 0.05;
-  gridHelper.position.y = -10;
-  scene.add(gridHelper);
-
-  // Virus particles (hidden initially)
-  const virusGeo = new THREE.SphereGeometry(0.12, 6, 6);
-  for (let i = 0; i < 40; i++) {
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0 });
-    const v = new THREE.Mesh(virusGeo, mat);
-    v.position.set((Math.random()-0.5)*30, (Math.random()-0.5)*15, (Math.random()-0.5)*30);
-    v.userData = { speed: Math.random()*0.02+0.01, phase: Math.random()*Math.PI*2 };
-    scene.add(v);
-    virusParticles.push(v);
-  }
-
-  // Firewall lines (hidden initially)
-  for (let i = 0; i < 20; i++) {
-    const pts = [];
-    const x = (Math.random()-0.5)*40;
-    const z = (Math.random()-0.5)*40;
-    for (let j = -10; j <= 10; j += 0.5) {
-      pts.push(new THREE.Vector3(x + Math.sin(j*0.5)*0.3, j, z));
-    }
-    const fwGeo = new THREE.BufferGeometry().setFromPoints(pts);
-    const fwMat = new THREE.LineBasicMaterial({ color: 0x4db8ff, transparent: true, opacity: 0 });
-    const fwLine = new THREE.Line(fwGeo, fwMat);
-    scene.add(fwLine);
-    firewallLines.push(fwLine);
-  }
-}
-
-function animate() {
-  frameId = requestAnimationFrame(animate);
-  const t = Date.now() * 0.001;
-
-  // Smooth camera rotation
-  targetRotY += (mouseX * 0.0008 - targetRotY) * 0.05;
-  targetRotX += (mouseY * 0.0005 - targetRotX) * 0.05;
-  targetRotX = Math.max(-0.5, Math.min(0.5, targetRotX));
-  camera.rotation.y = targetRotY;
-  camera.rotation.x = targetRotX;
-
-  // Animate nodes
-  particles.forEach((p, i) => {
-    if (p.userData && p.userData.speed) {
-      if (p.geometry && p.geometry.type === 'IcosahedronGeometry') {
-        p.rotation.x = t * 0.3;
-        p.rotation.y = t * 0.5;
-      } else {
-        p.position.y = p.userData.oy + Math.sin(t * p.userData.speed * 10 + p.userData.phase) * 0.5;
-      }
-    }
+function initGL(){
+  var cv=document.getElementById('c');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setClearColor(0x020A16);
+  scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0x020A16,.03);
+  camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,600);
+  camera.position.set(0,0,0);
+  clock=new THREE.Clock();
+  window.addEventListener('resize',()=>{
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
   });
-
-  // Virus particles movement
-  virusParticles.forEach(v => {
-    v.position.x += Math.sin(t * v.userData.speed * 5 + v.userData.phase) * 0.02;
-    v.position.y += Math.cos(t * v.userData.speed * 3 + v.userData.phase) * 0.02;
-    v.position.z += Math.sin(t * v.userData.speed * 4 + v.userData.phase + 1) * 0.02;
+  cv.addEventListener('mousedown',e=>{dragging=true;lmx=e.clientX;lmy=e.clientY});
+  window.addEventListener('mouseup',()=>dragging=false);
+  window.addEventListener('mousemove',e=>{
+    if(!running||!dragging)return;
+    tarY-=(e.clientX-lmx)*.003; tarX-=(e.clientY-lmy)*.002;
+    tarX=Math.max(-Math.PI/3,Math.min(Math.PI/3,tarX));
+    lmx=e.clientX;lmy=e.clientY;
   });
-
-  // Pulsing connections
-  connections.forEach((c, i) => {
-    if (c.material && c.material.opacity !== undefined) {
-      const base = c.userData.baseOpacity || c.material.opacity;
-      c.material.opacity = base + Math.sin(t * 2 + i) * 0.05;
-    }
-  });
-
-  renderer.render(scene, camera);
-}
-
-// ===== CONTROLS =====
-function setupControls() {
-  const canvas = renderer.domElement;
-
-  // Mouse
-  canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-  window.addEventListener('mouseup', () => isDragging = false);
-  window.addEventListener('mousemove', e => {
-    if (isDragging) {
-      mouseX += (e.clientX - lastX) * 2;
-      mouseY += (e.clientY - lastY) * 2;
-      lastX = e.clientX; lastY = e.clientY;
-    }
-  });
-
-  // Touch
-  canvas.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    isDragging = true;
-    lastX = touchStartX; lastY = touchStartY;
-  }, { passive: true });
-
-  canvas.addEventListener('touchmove', e => {
-    if (!isDragging) return;
-    const dx = e.touches[0].clientX - lastX;
-    const dy = e.touches[0].clientY - lastY;
-    mouseX += dx * 2.5;
-    mouseY += dy * 2.5;
-    lastX = e.touches[0].clientX;
-    lastY = e.touches[0].clientY;
+  cv.addEventListener('touchstart',e=>{if(e.touches.length===1){dragging=true;lmx=e.touches[0].clientX;lmy=e.touches[0].clientY}},{passive:true});
+  window.addEventListener('touchmove',e=>{
+    if(!running||!dragging||e.touches.length!==1)return;
     e.preventDefault();
-  }, { passive: false });
-
-  canvas.addEventListener('touchend', () => isDragging = false, { passive: true });
-
-  // Keyboard
-  const keys = {};
-  window.addEventListener('keydown', e => { keys[e.key] = true; });
-  window.addEventListener('keyup', e => { keys[e.key] = false; });
-
-  setInterval(() => {
-    const speed = 0.15;
-    if (keys['w'] || keys['ArrowUp']) camera.position.z -= speed;
-    if (keys['s'] || keys['ArrowDown']) camera.position.z += speed;
-    if (keys['a'] || keys['ArrowLeft']) camera.position.x -= speed;
-    if (keys['d'] || keys['ArrowRight']) camera.position.x += speed;
-    camera.position.z = Math.max(-20, Math.min(25, camera.position.z));
-  }, 16);
+    tarY-=(e.touches[0].clientX-lmx)*.003;tarX-=(e.touches[0].clientY-lmy)*.002;
+    tarX=Math.max(-Math.PI/3,Math.min(Math.PI/3,tarX));
+    lmx=e.touches[0].clientX;lmy=e.touches[0].clientY;
+  },{passive:false});
+  window.addEventListener('touchend',()=>dragging=false);
+  cv.addEventListener('click',e=>{
+    if(!running||answered)return;
+    var rect=cv.getBoundingClientRect();
+    var mx=((e.clientX-rect.left)/rect.width)*2-1;
+    var my=-((e.clientY-rect.top)/rect.height)*2+1;
+    var cr=new THREE.Raycaster();
+    cr.setFromCamera(new THREE.Vector2(mx,my),camera);
+    var hits=hotMesh?cr.intersectObject(hotMesh,true):[];
+    var ch=new THREE.Raycaster();ch.setFromCamera(center,camera);
+    var ch2=hotMesh?ch.intersectObject(hotMesh,true):[];
+    if(hits.length||ch2.length){resetGaze();openPanel();}
+  });
+  buildEnv(0);
+  loop();
 }
 
-function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+/* ── Clear & Build Environment ── */
+function clearEnv(){
+  envObjs.forEach(o=>{scene.remove(o);if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()});
+  envObjs=[];particles=[];streams=[];hotMesh=null;hotGlow=null;
 }
 
-// ===== PHASE SYSTEM =====
-function applyPhase(idx) {
-  const phase = phases[idx];
+function buildEnv(i){
+  clearEnv();
+  var s=STAGES[i];
+  renderer.setClearColor(s.envColor);
+  scene.fog.color.setHex(s.envColor);
 
-  // Update narrative
-  document.getElementById('hud-phase').textContent = phase.label;
-  const narEl = document.getElementById('narrative-text');
-  narEl.style.animation = 'none';
-  void narEl.offsetWidth;
-  narEl.style.animation = 'fadeInUp 0.5s ease';
-  narEl.textContent = phase.narrative;
-  document.getElementById('narrative-label').textContent = `المرحلة ${idx + 1} من ${phases.length}`;
+  /* Ambient + point light */
+  var al=new THREE.AmbientLight(0xffffff,.35);scene.add(al);envObjs.push(al);
+  var pl=new THREE.PointLight(s.nodeCol,2.5,25);pl.position.set(0,2,-7);scene.add(pl);envObjs.push(pl);
 
-  // Phase bar
-  const bar = document.getElementById('phase-bar');
-  bar.innerHTML = phases.map((p, i) => `<div class="phase-dot ${i < idx ? 'done' : i === idx ? 'active' : ''}"></div>`).join('');
+  /* Grid floor */
+  var gv=[],sz=50,st=2.5;
+  for(var x=-sz;x<=sz;x+=st){gv.push(x,-3,-sz,x,-3,sz);gv.push(-sz,-3,x,sz,-3,x);}
+  var gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(gv,3));
+  var gm=new THREE.LineBasicMaterial({color:s.gridCol,transparent:true,opacity:.55});
+  var grid=new THREE.LineSegments(gg,gm);scene.add(grid);envObjs.push(grid);
 
-  // Alert
-  const alert = document.getElementById('alert-banner');
-  alert.style.display = phase.alertVisible ? 'block' : 'none';
+  /* Ceiling grid */
+  var cv2=[],cst=5;
+  for(var x=-sz;x<=sz;x+=cst){cv2.push(x,9,-sz,x,9,sz);cv2.push(-sz,9,x,sz,9,x);}
+  var cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute(cv2,3));
+  var cm=new THREE.LineBasicMaterial({color:s.gridCol,transparent:true,opacity:.18});
+  var ceil=new THREE.LineSegments(cg,cm);scene.add(ceil);envObjs.push(ceil);
 
-  // Buttons
-  document.getElementById('btn-prev').disabled = idx === 0;
-  const nextBtn = document.getElementById('btn-next');
-  nextBtn.textContent = phase.isLast ? 'إنهاء الرحلة 🏁' : 'التالي ▶';
+  /* Floating network nodes */
+  var npos=[[-6,1,-9],[6,2,-10],[-8,-1,-7],[8,0,-8],[0,2,-11],[-3,3,-13],[3,-1,-12],[0,-1,-5],[-10,1,-11],[10,2,-9]];
+  npos.forEach(function(p,idx){
+    var r=.1+Math.random()*.22;
+    var geo=new THREE.SphereGeometry(r,8,8);
+    var col=idx%4===0?s.nodeCol:(idx%3===0?0xFF4455:s.nodeCol);
+    var mat=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.8});
+    var m=new THREE.Mesh(geo,mat);
+    m.position.set(p[0],p[1],p[2]);
+    m.userData={baseY:p[1],ph:Math.random()*Math.PI*2};
+    scene.add(m);envObjs.push(m);particles.push(m);
+    /* glow ring around some nodes */
+    if(idx%2===0){
+      var rg=new THREE.TorusGeometry(r*2.5,.02,6,24);
+      var rm=new THREE.MeshBasicMaterial({color:s.nodeCol,transparent:true,opacity:.25});
+      var ring=new THREE.Mesh(rg,rm);ring.position.set(p[0],p[1],p[2]);ring.rotation.x=Math.PI/2;
+      ring.userData={spin:true};scene.add(ring);envObjs.push(ring);particles.push(ring);
+    }
+  });
 
-  // Scene color shift
-  applySceneColors(phase, idx);
+  /* Connection lines */
+  [[0,4],[1,4],[2,3],[4,5],[4,6],[7,0],[7,1],[8,9]].forEach(function(pair){
+    var a=npos[pair[0]],b=npos[pair[1]];
+    var lg=new THREE.BufferGeometry();
+    lg.setAttribute('position',new THREE.Float32BufferAttribute([a[0],a[1],a[2],b[0],b[1],b[2]],3));
+    var lm=new THREE.LineBasicMaterial({color:s.nodeCol,transparent:true,opacity:.15});
+    var l=new THREE.Line(lg,lm);scene.add(l);envObjs.push(l);
+  });
 
-  // Camera gentle move
-  gsapCamera(phase.camTarget);
+  /* Data stream particles */
+  for(var d=0;d<80;d++){
+    var sg=new THREE.SphereGeometry(.03+Math.random()*.04,4,4);
+    var col=Math.random()>.4?s.nodeCol:0xFF4455;
+    var sm=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.65});
+    var sp=new THREE.Mesh(sg,sm);
+    var ang=Math.random()*Math.PI*2,rad=4+Math.random()*14;
+    sp.position.set(Math.cos(ang)*rad,(Math.random()-.5)*7,-6-Math.random()*16);
+    sp.userData={spd:.008+Math.random()*.035,ang:ang,rad:rad,ys:(Math.random()-.5)*.018};
+    scene.add(sp);envObjs.push(sp);streams.push(sp);
+  }
 
-  // Action prompt
-  actionAnswered = false;
-  if (phase.hasAction) {
-    setTimeout(() => showActionPrompt(phase), 1200);
+  /* Warning columns */
+  for(var c=0;c<10;c++){
+    var ca=c/10*Math.PI*2,cr=9+Math.random()*5;
+    for(var r=0;r<4;r++){
+      var pg=new THREE.PlaneGeometry(.12,.35);
+      var pm=new THREE.MeshBasicMaterial({color:s.nodeCol,transparent:true,opacity:.04+Math.random()*.18,side:THREE.DoubleSide});
+      var pl2=new THREE.Mesh(pg,pm);
+      pl2.position.set(Math.cos(ca)*cr,-1.5+r*1.15,Math.sin(ca)*cr);
+      pl2.lookAt(0,pl2.position.y,0);
+      pl2.userData={bs:1+Math.random()*2,bp:Math.random()*Math.PI*2};
+      scene.add(pl2);envObjs.push(pl2);particles.push(pl2);
+    }
+  }
+
+  /* Central crisis core */
+  var cg2=new THREE.OctahedronGeometry(1,.0);
+  var cm2=new THREE.MeshBasicMaterial({color:s.nodeCol,wireframe:true,transparent:true,opacity:.35});
+  var core=new THREE.Mesh(cg2,cm2);core.position.set(0,.5,-8);
+  core.userData={isCore:true};scene.add(core);envObjs.push(core);particles.push(core);
+
+  var ig=new THREE.OctahedronGeometry(.55,0);
+  var im=new THREE.MeshBasicMaterial({color:0xFF4455,transparent:true,opacity:.2});
+  var inner=new THREE.Mesh(ig,im);inner.position.set(0,.5,-8);
+  inner.userData={isInner:true};scene.add(inner);envObjs.push(inner);particles.push(inner);
+
+  /* Alarm rings */
+  for(var ar=0;ar<3;ar++){
+    var arg=new THREE.TorusGeometry(1.2+ar*.7,.015,8,48);
+    var arm=new THREE.MeshBasicMaterial({color:0xFF4455,transparent:true,opacity:.15-ar*.04});
+    var aring=new THREE.Mesh(arg,arm);aring.position.set(0,.5,-8);
+    aring.userData={alarmRing:ar,speed:.3+ar*.15};
+    scene.add(aring);envObjs.push(aring);particles.push(aring);
+  }
+
+  /* Floating alert diamonds */
+  [[-4,2,-6],[4,1,-7],[-2,-1,-5],[2,3,-6]].forEach(function(p,idx){
+    var dg=new THREE.OctahedronGeometry(.18,0);
+    var dm=new THREE.MeshBasicMaterial({color:idx%2===0?0xFF4455:s.nodeCol,transparent:true,opacity:.7});
+    var dd=new THREE.Mesh(dg,dm);dd.position.set(p[0],p[1],p[2]);
+    dd.userData={diamond:true,ph:idx*1.5};
+    scene.add(dd);envObjs.push(dd);particles.push(dd);
+  });
+
+  buildHotspot();
+}
+
+function buildHotspot(){
+  var rg=new THREE.TorusGeometry(.55,.05,10,40);
+  var rm=new THREE.MeshBasicMaterial({color:0xFF4455,transparent:true,opacity:.9});
+  hotMesh=new THREE.Mesh(rg,rm);hotMesh.position.set(0,.5,-6);hotMesh.userData.isHot=true;
+  scene.add(hotMesh);envObjs.push(hotMesh);
+
+  var dg=new THREE.OctahedronGeometry(.18,0);
+  var dm=new THREE.MeshBasicMaterial({color:0xFF4455});
+  var dot=new THREE.Mesh(dg,dm);dot.position.set(0,.5,-6);
+  scene.add(dot);envObjs.push(dot);particles.push(dot);
+
+  var gg=new THREE.SphereGeometry(.7,12,12);
+  var gm=new THREE.MeshBasicMaterial({color:0xFF4455,transparent:true,opacity:.06,side:THREE.BackSide});
+  hotGlow=new THREE.Mesh(gg,gm);hotGlow.position.set(0,.5,-6);
+  scene.add(hotGlow);envObjs.push(hotGlow);
+}
+
+/* ── Gaze ── */
+function checkGaze(dt){
+  if(!running||answered){resetGaze();return;}
+  raycaster.setFromCamera(center,camera);
+  if(!hotMesh){resetGaze();return;}
+  var hits=raycaster.intersectObject(hotMesh);
+  if(hits.length>0){
+    document.getElementById('hs-lbl').classList.add('on');
+    document.getElementById('hs-lbl').textContent=STAGES[stage].hsLabel;
+    gazeT+=dt;
+    var off=126*(1-gazeT/2);
+    document.getElementById('gaze-arc').style.strokeDashoffset=Math.max(0,off);
+    if(gazeT>=2){resetGaze();openPanel();}
   } else {
-    document.getElementById('action-prompt').style.display = 'none';
-    nextBtn.disabled = false;
-  }
-
-  if (!phase.hasAction) nextBtn.disabled = false;
-}
-
-function applySceneColors(phase, idx) {
-  const col = new THREE.Color(phase.color);
-  const colDim = col.clone().multiplyScalar(0.3);
-
-  // Update node colors
-  particles.forEach(p => {
-    if (p.material) p.material.color.set(col);
-  });
-
-  // Show/hide virus based on phase
-  const showVirus = idx >= 1 && idx <= 2;
-  const virusIntensity = idx === 1 ? 0.7 : idx === 2 ? 1.0 : 0;
-  virusParticles.forEach(v => {
-    v.material.opacity = showVirus ? virusIntensity * 0.8 : 0;
-    v.material.color.set(idx === 3 ? 0x888888 : 0xff2200);
-  });
-
-  // Show/hide firewall
-  const showFirewall = idx >= 3;
-  firewallLines.forEach(f => {
-    f.material.opacity = showFirewall ? 0.4 : 0;
-  });
-
-  // Connections color
-  connections.forEach((c, i) => {
-    if (c.material) {
-      c.material.color.set(col);
-      c.userData.baseOpacity = idx >= 1 && idx <= 2 ? 0.06 : 0.12;
-    }
-  });
-
-  // Background fog color
-  if (idx >= 1 && idx <= 2) {
-    scene.fog.color.set(0x100005);
-  } else if (idx >= 3 && idx <= 4) {
-    scene.fog.color.set(0x000510);
-  } else {
-    scene.fog.color.set(0x000510);
+    resetGaze();
+    document.getElementById('hs-lbl').classList.remove('on');
   }
 }
+function resetGaze(){gazeT=0;document.getElementById('gaze-arc').style.strokeDashoffset=126;}
 
-// Simple camera animation
-let camAnimFrame;
-function gsapCamera(target) {
-  const startZ = camera.position.z;
-  const startX = camera.position.x;
-  const startY = camera.position.y;
-  const tZ = startZ + (target.z - startZ) * 0.3;
-  const tX = startX + (target.x - startX) * 0.3;
-  const tY = startY + (target.y - startY) * 0.3;
-
-  let t = 0;
-  cancelAnimationFrame(camAnimFrame);
-  function step() {
-    t += 0.03;
-    if (t > 1) return;
-    camera.position.z = startZ + (tZ - startZ) * t;
-    camera.position.x = startX + (tX - startX) * t;
-    camera.position.y = startY + (tY - startY) * t;
-    camAnimFrame = requestAnimationFrame(step);
-  }
-  step();
-}
-
-function showActionPrompt(phase) {
-  const prompt = document.getElementById('action-prompt');
-  document.getElementById('btn-next').disabled = true;
-
-  prompt.innerHTML = `
-    <div class="action-title">${phase.actionTitle}</div>
-    <div class="action-sub">${phase.actionSub}</div>
-    <div class="action-choices">
-      ${phase.choices.map((c, i) => `
-        <button class="choice-btn" onclick="answerAction(${i}, ${c.correct}, '${c.feedback}', ${phase.choices.findIndex(x=>x.correct)})">
-          <span class="choice-icon">${c.icon}</span>
-          <span>${c.text}</span>
-        </button>`).join('')}
-    </div>`;
-  prompt.style.display = 'block';
-}
-
-function answerAction(idx, correct, feedback, correctIdx) {
-  if (actionAnswered) return;
-  actionAnswered = true;
-
-  const btns = document.querySelectorAll('.choice-btn');
-  btns.forEach((b, i) => {
-    b.disabled = true;
-    if (i === correctIdx) {
-      b.style.borderColor = '#00ff99';
-      b.style.background = 'rgba(0,255,153,0.15)';
-      b.style.color = '#00ff99';
-    } else if (i === idx && !correct) {
-      b.style.borderColor = '#ff4444';
-      b.style.background = 'rgba(255,68,68,0.1)';
-      b.style.color = '#ff4444';
-    }
+/* ── LOOP ── */
+function loop(){
+  requestAnimationFrame(loop);
+  var dt=clock.getDelta(),t=clock.getElapsedTime();
+  /* smooth look */
+  camera.rotation.x+=(tarX-camera.rotation.x)*.09;
+  camera.rotation.y+=(tarY-camera.rotation.y)*.09;
+  /* particles */
+  particles.forEach(function(p){
+    if(p.userData.isCore){p.rotation.x+=.01;p.rotation.y+=.015;p.position.y=.5+Math.sin(t*.6)*0.3;}
+    else if(p.userData.isInner){p.rotation.x-=.008;p.rotation.z+=.012;}
+    else if(p.userData.alarmRing!==undefined){p.rotation.x+=p.userData.speed*.01;p.rotation.z+=p.userData.speed*.015;p.material.opacity=.04+Math.abs(Math.sin(t*p.userData.speed+p.userData.alarmRing))*.12;}
+    else if(p.userData.diamond){p.rotation.x+=.015;p.rotation.z+=.01;p.position.y=p.userData.ph%3+Math.sin(t+p.userData.ph)*.25;}
+    else if(p.userData.spin){p.rotation.z+=.008;}
+    else if(p.userData.baseY!==undefined){p.position.y=p.userData.baseY+Math.sin(t+p.userData.ph)*.22;}
+    else if(p.userData.bs){p.material.opacity=.04+Math.abs(Math.sin(t*p.userData.bs+p.userData.bp))*.18;}
   });
-
-  const prompt = document.getElementById('action-prompt');
-  const feedbackDiv = document.createElement('div');
-  feedbackDiv.style.cssText = `margin-top:14px;padding:12px 20px;background:${correct?'rgba(0,255,153,0.1)':'rgba(255,68,68,0.1)'};border:1px solid ${correct?'rgba(0,255,153,0.4)':'rgba(255,68,68,0.4)'};border-radius:12px;font-size:14px;font-weight:700;color:${correct?'#00ff99':'#ff6666'};max-width:500px;margin:14px auto 0;`;
-  feedbackDiv.textContent = (correct ? '✅ ' : '💡 ') + feedback;
-  prompt.appendChild(feedbackDiv);
-
-  setTimeout(() => {
-    prompt.style.display = 'none';
-    document.getElementById('btn-next').disabled = false;
-  }, 2500);
-}
-
-function nextPhase() {
-  if (currentPhase >= phases.length - 1) {
-    showEndScreen();
-    return;
+  /* streams */
+  streams.forEach(function(s){
+    s.userData.ang+=s.userData.spd;
+    s.position.x=Math.cos(s.userData.ang)*s.userData.rad;
+    s.position.z=-10+Math.sin(s.userData.ang*.7)*9;
+    s.position.y+=s.userData.ys;
+    if(s.position.y>4){s.userData.ys=-Math.abs(s.userData.ys);}
+    if(s.position.y<-4){s.userData.ys=Math.abs(s.userData.ys);}
+  });
+  /* hotspot pulse */
+  if(hotMesh){
+    hotMesh.rotation.z+=.025;hotMesh.rotation.x=Math.sin(t*1.4)*.35;
+    var p=.88+Math.sin(t*2.2)*.12;hotMesh.scale.setScalar(p);
+    if(hotGlow)hotGlow.material.opacity=.04+Math.sin(t*2.2)*.035;
   }
-  currentPhase++;
-  applyPhase(currentPhase);
+  checkGaze(dt);
+  renderer.render(scene,camera);
 }
 
-function prevPhase() {
-  if (currentPhase <= 0) return;
-  currentPhase--;
-  applyPhase(currentPhase);
+/* ══════════════════════════════════════════
+   TIMER
+══════════════════════════════════════════ */
+function startTimer(){
+  timerSecs=525;
+  timerInterval=setInterval(function(){
+    timerSecs=Math.max(0,timerSecs-1);
+    var m=Math.floor(timerSecs/60),s=timerSecs%60;
+    var str=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+    var el=document.getElementById('hudTimer');
+    el.textContent=str;
+    el.className='hud-timer'+(timerSecs<60?' danger':'');
+    if(timerSecs===0)clearInterval(timerInterval);
+  },1000);
 }
 
-function showEndScreen() {
-  cancelAnimationFrame(frameId);
-  document.getElementById('ui-overlay').style.display = 'none';
-  const end = document.getElementById('end-overlay');
-  end.style.display = 'flex';
-  end.style.animation = 'none';
-  confettiEnd();
+/* ══════════════════════════════════════════
+   OPEN PANEL
+══════════════════════════════════════════ */
+function openPanel(){
+  var s=STAGES[stage];
+  answered=false;
+  document.getElementById('look-hint').classList.remove('on');
+  document.getElementById('hs-lbl').classList.remove('on');
+  document.getElementById('ptag').textContent=s.phase+' — '+s.role;
+  document.getElementById('phl').innerHTML=s.hl.replace(/\n/g,'<br>');
+  document.getElementById('fb').className='';
+  document.getElementById('nxtBtn').disabled=true;
+  document.getElementById('pscore').textContent=score;
+  var wrap=document.getElementById('pchoices');
+  wrap.innerHTML='';
+  s.choices.forEach(function(c,i){
+    var b=document.createElement('button');
+    b.className='ch';
+    b.innerHTML='<span class="ch-ico">'+c.e+'</span><span>'+c.t+'</span>';
+    b.onclick=function(){handleAnswer(c.ok,i,s);};
+    wrap.appendChild(b);
+  });
+  document.getElementById('panel').classList.add('on');
+  /* update phase fill bar */
+  document.getElementById('phase-fill').style.width=((stage/STAGES.length)*100)+'%';
 }
 
-function confettiEnd() {
-  const colors = ['#00ff99','#4db8ff','#ffffff','#f5c842'];
-  for (let i = 0; i < 80; i++) {
-    const c = document.createElement('div');
-    c.className = 'confetti-piece';
-    c.style.cssText = `position:fixed;left:${Math.random()*100}%;top:-10px;width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};animation:confettiFall ${Math.random()*2+1.5}s linear ${Math.random()*0.5}s forwards;z-index:300;pointer-events:none;`;
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 4000);
-  }
+function handleAnswer(ok,idx,s){
+  if(answered)return;
+  answered=true;
+  document.querySelectorAll('.ch').forEach(function(b,i){
+    b.classList.add('off');
+    if(s.choices[i].ok) b.classList.add('ok');
+    else if(i===idx&&!ok) b.classList.add('bad');
+  });
+  var fb=document.getElementById('fb');
+  if(ok){score+=20;results.push(true);fb.textContent=s.fb.ok;fb.className='on ok';}
+  else{results.push(false);fb.textContent=s.fb.err;fb.className='on bad';}
+  document.getElementById('pscore').textContent=score;
+  document.getElementById('hudScore').textContent=score;
+  document.getElementById('nxtBtn').disabled=false;
 }
 
-// ===== ENTRY POINT =====
-function startExperience() {
-  const overlay = document.getElementById('welcome-overlay');
-  const loadBar = document.getElementById('loading-bar');
-
-  // Fake loading progress
-  let prog = 0;
-  const loadInterval = setInterval(() => {
-    prog += Math.random() * 15 + 5;
-    if (prog >= 100) {
-      prog = 100;
-      clearInterval(loadInterval);
-      setTimeout(() => {
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          loadBar.style.display = 'none';
-          document.getElementById('ui-overlay').style.display = 'block';
-          applyPhase(0);
-        }, 800);
-      }, 300);
-    }
-    loadBar.style.width = prog + '%';
-  }, 80);
-
-  // Init Three.js
-  initThree();
+/* ══════════════════════════════════════════
+   ADVANCE
+══════════════════════════════════════════ */
+function advance(){
+  document.getElementById('panel').classList.remove('on');
+  stage++;
+  if(stage>=STAGES.length){setTimeout(showResult,600);return;}
+  setTimeout(function(){
+    buildEnv(stage);
+    updateHUD();
+    setTimeout(showHint,1200);
+  },450);
 }
 
-function restartExperience() {
-  document.getElementById('end-overlay').style.display = 'none';
-  currentPhase = 0;
-  scene.clear();
-  particles = []; connections = []; virusParticles = []; firewallLines = [];
-  buildScene();
-  document.getElementById('ui-overlay').style.display = 'block';
-  frameId = requestAnimationFrame(animate);
-  applyPhase(0);
+function updateHUD(){
+  var s=STAGES[stage];
+  document.getElementById('hudPhase').textContent='المرحلة '+(stage+1);
+  document.getElementById('rbRole').textContent=s.roleShort;
+  var el=document.getElementById('env-lbl');
+  el.textContent=s.env;el.classList.add('on');
+  setTimeout(function(){el.classList.remove('on');},2800);
+  document.getElementById('phase-fill').style.width=((stage/STAGES.length)*100)+'%';
 }
 
-// Confetti keyframe
-const style = document.createElement('style');
-style.textContent = `@keyframes confettiFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }`;
-document.head.appendChild(style);
+function showHint(){
+  if(answered)return;
+  var h=document.getElementById('look-hint');
+  h.classList.add('on');setTimeout(function(){h.classList.remove('on');},4000);
+}
+
+/* ══════════════════════════════════════════
+   RESULT
+══════════════════════════════════════════ */
+function showResult(){
+  clearInterval(timerInterval);
+  document.getElementById('phase-fill').style.width='100%';
+  var correct=results.filter(function(r){return r;}).length;
+  var m,t,sub;
+  if(correct===5){m='🏆';t='محترف استجابة سيبرانية!';sub='أداء مثالي — أنت مؤهل لقيادة فريق أمن سيبراني حقيقي!';}
+  else if(correct>=4){m='🥇';t='مدير أزمات متقدم!';sub='قريب جداً من الاحتراف — أداء رائع تحت الضغط!';}
+  else if(correct>=3){m='🥈';t='محلل أمني واعد!';sub='أداء جيد — استمر في التدريب لتصبح خبيراً!';}
+  else{m='🥉';t='متعلم نشيط!';sub='الأزمة صعبة! راجع الإجابات وحاول مرة أخرى.';}
+  document.getElementById('rMedal').textContent=m;
+  document.getElementById('rTitle').textContent=t;
+  document.getElementById('rSub').textContent=sub;
+  document.getElementById('rNum').textContent=score;
+  document.getElementById('rArc').style.strokeDashoffset=345*(1-score/100);
+  var skills=[
+    {l:'تحليل التهديدات',  v:results[0]?100:25,c:'#FF4455'},
+    {l:'ترتيب الأولويات', v:results[1]?100:28,c:'#00E5A0'},
+    {l:'إدارة التواصل',   v:results[2]?100:30,c:'#38B6FF'},
+    {l:'التحقيق الجنائي', v:results[3]?100:22,c:'#A78BFA'},
+    {l:'التحصين',         v:results[4]?100:20,c:'#FFD166'}
+  ];
+  document.getElementById('rBars').innerHTML=skills.map(function(s){
+    return '<div class="rrow"><span class="rlbl">'+s.l+'</span><div class="rtrk"><div class="rfil" style="width:0%;background:'+s.c+'" data-w="'+s.v+'"></div></div></div>';
+  }).join('');
+  document.getElementById('result').classList.add('on');
+  setTimeout(function(){document.querySelectorAll('.rfil').forEach(function(f){f.style.width=f.dataset.w+'%';});},350);
+}
+
+function restart(){
+  stage=0;score=0;answered=false;results=[];
+  document.getElementById('result').classList.remove('on');
+  document.getElementById('hudScore').textContent='0';
+  document.getElementById('hudPhase').textContent='المرحلة ١';
+  timerSecs=525;
+  clearInterval(timerInterval);startTimer();
+  buildEnv(0);updateHUD();
+  setTimeout(showHint,1000);
+}
+
+/* ══════════════════════════════════════════
+   START
+══════════════════════════════════════════ */
+document.getElementById('startBtn').addEventListener('click',function(){
+  running=true;
+  var intro=document.getElementById('intro');
+  intro.classList.add('out');
+  setTimeout(function(){intro.style.display='none';},750);
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('xhair').classList.add('on');
+  document.getElementById('gaze-svg').classList.add('on');
+  document.getElementById('role-badge').classList.add('on');
+  document.getElementById('rbRole').textContent=STAGES[0].roleShort;
+  var el=document.getElementById('env-lbl');
+  el.textContent=STAGES[0].env;el.classList.add('on');
+  setTimeout(function(){el.classList.remove('on');},2800);
+  document.getElementById('phase-fill').style.width='0%';
+  startTimer();
+  initGL();
+  setTimeout(showHint,1500);
+});
 </script>
 </body>
 </html>
